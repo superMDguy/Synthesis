@@ -4,3 +4,5 @@ wikipedia
 newspaper
 flask
 markdown
+numpy
+scipy
