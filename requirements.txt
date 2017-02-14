@@ -1,0 +1,6 @@
+scikit-learn
+sumy
+wikipedia
+newspaper
+flask
+markdown

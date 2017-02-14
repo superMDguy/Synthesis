@@ -1,0 +1,4 @@
+--timeout 0
+--ui bdd
+--reporter spec
+--require should
