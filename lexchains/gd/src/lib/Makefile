@@ -1,1 +1,0 @@
-:MAKE: libdict - libgraph libgd
