@@ -1,4 +1,5 @@
- # Synthesis
+
+# Synthesis
 *Automatic information extraction and classification*
 
 ## Motivation
