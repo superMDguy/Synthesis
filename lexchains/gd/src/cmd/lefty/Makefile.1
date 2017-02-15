@@ -1,0 +1,40 @@
+:PACKAGE: - X11
+.SOURCE: .INSERT ./x11 ./dot2l ./cs2l ./examples
+
+.SOURCE.h: /home/ek/work/hp/include /usr/include/X11R5
+.SOURCE.a: /home/ek/work/hp/lib /usr/lib/X11R5
+
+LEFTYPATH=="/usr/local/lib/lefty"
+
+GSRC = g.c gcommon.c garray.c gbutton.c gcanvas.c glabel.c gmenu.c \
+	gpcanvas.c gquery.c gscroll.c gtext.c gview.c mem.c common.c
+
+HAVEDOT==1
+if HAVEDOT == 1
+	DOT2LSRC = dotparse.y dot2l.c dotlex.c dottrie.c
+end
+if HAVECS == 1
+	CS2LSRC = cs2l.c
+	EXTRALIBS += -lcs
+	:PACKAGE: ast
+end
+
+SGI==0
+if $(SGI) == 1
+	EXTRALIBS += +lw +lSM +lICE
+end
+
+:ALL: lefty -lgfx
+
+lefty :: lefty.c gfxview.c txtview.c internal.c display.c str.c exec.c parse.c \
+	lex.c $(DOT2LSRC) $(CS2LSRC) tbl.c code.c io.c malloc.c \
+	-lgfx +lXaw +lXmu +lXt +lXext +lX11 -lm $(EXTRALIBS)
+
+gfx :LIBRARY: $(GSRC)
+
+EXAMPLES = def.lefty fractal.lefty tree.lefty
+$(LIBDIR)/lefty :INSTALLDIR: $(EXAMPLES) dot.lefty lefty.psp
+
+$(MANDIR)1 :INSTALLDIR: lefty.1
+
+:: lefty.ps

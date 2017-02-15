@@ -1,0 +1,15 @@
+This directory contains the source for the dictionary library.
+The code is written in a style suitable for compilation with
+old C, ANSI-C or C++.
+
+There are two make files: Makefile for nmake and makefile for old make.
+
+If you run into any problems or have any ideas for enhancement,
+I'd appreciate hearing about it. Good luck and have fun.
+
+Kiem-Phong Vo
+AT&T Bell Labs, MH-2B112
+600 Mountain Ave.
+Murray Hill, NJ07974
+e-mail: kpv@research.att.com
+Phone: (908) 582-4869

@@ -1,0 +1,26 @@
+sentence:
+while (<>) {
+
+# if (/^#/) { next sentence } ;
+
+%all_feat = () ;
+
+print "\ninput sentence: " . $_ . "\n" ;
+
+$wordnum = 0 ;
+
+$output = "" ;
+
+@words = split ;
+$_ = '{' . join ('}{', @words) . '}' ;
+
+while (m!{([^/]*)/!)
+ { $wordnum = $wordnum+1 ;
+   $output = $output . $` . '{' . $1 . "&$wordnum/" ;
+   $_ = $' ;
+   }
+
+$_ = $output . $_ if ($output) ;
+
+$all_out = "" ;
+

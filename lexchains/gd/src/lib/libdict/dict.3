@@ -1,0 +1,442 @@
+.TH LIBDICT 3
+.SH NAME
+\fBlibdict\fR \- a dictionary library
+.SH SYNOPSIS
+.de Tp
+.fl
+.ne 2
+.TP
+..
+.de Ss
+.fl
+.ne 2
+.SS "\\$1"
+..
+.ta 1.0i 2.0i 3.0i 4.0i 5.0i
+.nf
+.ft 5
+#include <dict.h>
+
+.ft 1
+.fi
+.Ss "DICTIONARY TYPES"
+.nf
+.ft 5
+Void_p;
+Dict_t;
+Dtlink_t;
+Dtstat_t;
+Dtdisc_t;
+Dtmethod_t;
+typedef Void_p	(*Dtmake_f)(Void_p);
+typedef void	(*Dtfree_f)(Void_p);
+typedef int		(*Dtcompar_f)(char*, char*);
+typedef unsigned long	(*Dthash_f)(char*);
+.ft 1
+.fi
+.Ss "CREATING/CLOSING DICTIONARIES"
+.nf
+.ft 5
+Dict_t*	dtopen(Dtdisc_t* disc, Dtmethod_t method)
+int	dtclose(Dict_t* dict)
+Dtlink_t*	dtextract(Dict_t* dict)
+void	dtreset(Dict_t* dict, Dtlink_t* link)
+.ft 1
+.fi
+.Ss "DICTIONARY CONTROL"
+.nf
+.ft 5
+int	dtmethod(Dict_t* dict, Dtmethod_t method, int size)
+Dict_t*	dtview(Dict_t* dict, Dict_t* view)
+int	dtreorder(Dict_t* dict, Dtcompar_f comparf)
+.ft 1
+.fi
+.Ss "OBJECT OPERATIONS"
+.nf
+.ft 5
+Void_p	dtinsert(Dict_t* dict, Void_p obj)
+Void_p	dtdelete(Dict_t* dict, Void_p obj)
+Void_p	dtsearch(Dict_t* dict, Void_p obj)
+Void_p	dtfirst(Dict_t* dict)
+Void_p	dtnext(Dict_t* dict, Void_p obj)
+Void_p	dtlast(Dict_t* dict)
+Void_p	dtprev(Dict_t* dict, Void_p obj)
+int	dtwalk(Dict_t* dict, int (*userf)(Void_p))
+Dtlink_t*	dtflatten(Dict_t* dict)
+Dtlink_t*	dtlink(Dict_t*, Dtlink_t* link)
+Void_p	dtobj(Dict_t* dict, Dtlink_t* link)
+.ft 1
+.fi
+.Ss "DICTIONARY STATUS"
+.nf
+.ft 5
+int	dtsize(Dict_t* dict)
+Dict_t*	dtgetview(Dict_t* dict)
+Dtstat_t*	dtstat(Dict_t* dict, int all)
+.ft 1
+.fi
+.Ss "HASH FUNCTIONS"
+.nf
+.ft 5
+#define	dtcharhash(unsigned long h, unsigned char c)
+#define	dtstrhash(unsigned long h, unsigned char* str, int n)
+.ft 1
+.fi
+.SH DESCRIPTION
+.PP
+\fIlibdict\fP provides functions to manage run-time dictionaries.
+Hash tables are used for unordered objects and self-adjusting
+binary trees for ordered ones.
+A dictionary may switch between hash mode and order mode.
+It can also employ different orderings at different times.
+As an example of using this,
+consider an application that builds and outputs a list of words.
+During its construction, for fast search and elimination of duplications,
+the dictionary can be in hash mode.
+In this phase, a simple and fast string comparison method such as \f5strcmp(3)\fP
+could be used. However, at output time, it may be desirable to have the words
+in, say, the lexicographic order.
+This can be done with \fIlibdict\fP in two function calls, one to change the
+comparison function and one to turn to order mode.
+
+.PP
+.Ss "DICTIONARY TYPES"
+.PP
+
+.Ss "  Void_p"
+This defines a suitable type to pass objects between \fIlibdict\fP and the
+application code. \f5Void_p\fP is defined as \f5void*\fP for ANSI-C and C++
+and \f5char*\fP for other compilation environment.
+
+.Ss "  Dict_t"
+.Ss "  Dtlink_t"
+.Ss "  Dtdisc_t"
+.Ss "  Dtmethod_t"
+.Ss "  typedef Void_p	(*Dtmake_f)(Void_p)"
+.Ss "  typedef void	(*Dtfree_f)(Void_p)"
+.Ss "  typedef int		(*Dtcompar_f)(char*, char*)"
+.Ss "  typedef unsigned long	(*Dthash_f)(char*)"
+.Ss "  Dtstat_t"
+\f5Dict_t\fP is the type of a dictionary.
+See \f5dtopen()\fP for detailed discussion of the types:
+\f5Dict_t\fP, \f5Dtlink_t\fP, \f5Dtdisc_t\fP, \f5Dtmake_f\fP, \f5Dtfree_f\fP,
+\f5Dtcompar_f\fP, and \f5Dthash_f\fP.
+See \f5dtstat()\fP for \f5Dtstat_t\fP which give statistics on a dictionary.
+
+.PP
+.Ss "CREATING/CLOSING DICTIONARIES"
+.PP
+
+.Ss "  Dict_t* dtopen(Dtdisc_t* disc, Dtmethod_t method)"
+This function creates a new dictionary.
+It requires two arguments: \f5disc\fP and \f5method\fP.
+\f5method\fP can be \f5Dttree\fP for order mode or \f5Dthash\fp for hash mode.
+\f5disc\fP specifies methods to create/delete/compare objects in the dictionary.
+A discipline structure is of the type \f5Dtdisc_t\fP:
+.nf
+\f5
+	Dtdisc_t
+	{
+	int		key, size;
+	Dtmake_f	makef;
+	Dtfree_f	freef;
+	Dtcompar_f;	comparf;
+	Dthash_f	hashf;
+	}
+\fP
+.fi
+.Tp
+\f5int key, size\fP:
+\f5key\fP defines the offset from the starting address of a user's object
+to the key and \f5size\fP is the length of the key.
+Keys are used in comparing objects
+and in calculating their hash values (see \f5(*comparf)()\fP and \f5(*hashf)()\fP).
+If \f5key\fP is negative, the object's address is the key.
+In this case, the \f5size\fP field is ignored.
+If \f5key\fP is non-negative, the key is offset \f5key\fP bytes
+into the object. Let's call this address the key address.
+The key itself is defined by the value of \f5size\fP.
+If \f5size\fP is positive, the key is a \f5char\fP array of \f5size\fP bytes
+starting at the key address.
+If \f5size\fP is zero, the key is a null-terminated string starting at the key address.
+Finally, if \f5size\fP is negative, the key is 
+a null-terminated string whose address is stored at the key address.
+.Tp
+\f5Void_p (*makef)(Void_p obj)\fP:
+This makes a copy of the object \f5obj\fP suitable for
+insertion into the dictionary (\f5dtinsert()\fP).
+Within the library,
+object holders of the type \f5Dtlink_t\fP are created to hold such objects.
+To save space, it is possible to create a dictionary where
+object holder data are embedded in the objects themselves.
+This is done by specifying \f5NULL\fP for \f5(*makef)()\fP.
+Then, an object passed to a dictionary function must be
+declared with \f5Dtlink_t\fP as the first field as follows:
+.nf
+.ft 5
+    struct user_struct
+    {
+        Dtlink_t  link;
+        ...application-specific fields
+    }
+.ft 1
+.fi
+.br
+Note that when \f5Dtlink_t\fP is embedded in an object,
+the object cannot be in more than one dictionaries.
+.Tp
+\f5void (*freef)(Void_p obj)\fP:
+If not \f5NULL\fP, it is called when an object is being deleted (\f5dtdelete()\fP).
+Any space or information associated with \f5obj\fP can be freed or erased at this time.
+.Tp
+\f5int (*comparf)(char* key1, char* key1)\fP:
+This compares the keys of two given objects.
+It should return \f5<0\fP, \f5=0\fP, or \f5>0\fP to indicate
+whether \f5key1\fP is smaller, equal to, or larger than \f5key2\fP.
+When \f5(*comparf)()\fP is \f5NULL\fP, there are two cases.
+If \f5key\fP is negative,
+objects are compared by their addresses.
+If \f5key\fP is non-negative,
+object keys are compared
+either as \f5char\fP arrays of fixed size or null-terminated strings.
+See \f5key\fP and \f5size\fP for details on key definition.
+.Tp
+\f5long (*hashf)(char* key)\fP:
+This computes the hash value of
+\f5key\fP when the dictionary is in hash mode.
+When \f5(*hashf)()\fP \f5NULL\fP, there are two cases.
+If \f5key\fP is negative, objects are hashed by their addresses.
+If \f5key\fP is non-negative, an object's key is hashed
+either as \f5char\fP arrays of fixed size or null-terminated strings.
+See \f5key\fP and \f5size\fP for details on key definition.
+
+.Ss "  int dtclose(Dict_t* dict)"
+This function deletes all objects in \f5dict\fP,
+then frees all space associated with it.
+It is an error to close a dictionary that is being viewed by
+some other dictionaries.
+\f5dtclose()\fP returns \f50\fP on success and \f5-1\fP on failure.
+
+.Ss "  Dtlink_t* dtextract(Dict_t* dict)"
+.Ss "  void dtreset(Dict_t* dict, Dtlink_t* link)"
+These functions extract and reset the objects in the dictionary \f5dict\fP.
+They are useful in applications that wish to save space by  sharing
+a common \f5dict\fP structure among many dictionaries.
+Though both of these functions operate on either ordered or hashed dictionaries,
+their time complexity depends on the dictionary type. On an ordered dictionary,
+the time complexity is constant while on a hashed dictionary, the time complexity
+is proportional to the number of objects involved.
+\f5dtextract()\fP returns the root of the tree of objects if the
+dictionary is in ordered mode or a linked list of objects if the dictionary is
+in hashed mode.
+\f5dtreset()\fP repopulates \f5dict\fP with
+objects previously obtained via \f5dtextract()\fP.
+Note that dictionaries to be operated on by these functions
+should not be on a view path of dictionaries (see \f5dtview()\fP).
+
+.PP
+.Ss "DICTIONARY CONTROL"
+.PP
+
+.Ss "  Dtmethod_t dtmethod(Dict_t* dict, Dtmethod_t method, int size)"
+This function changes the manipulation method of \f5dict\fP to \f5method\fP.
+If \f5method\fP is \f5Dthash\fP, the \f5size\fP argument is used as follows.
+If \f5size\fP is \f5>0\fP, the hash table is fixed at this size.
+If \f5size\fP is \f5<=0\fP, the number of slots in the hash table
+is dynamically sized by \fIlibdict\fP.
+\f5dtmethod()\fP returns the previous method or \f5NULL\fP on failure.
+
+.Ss "  Dict_t* dtview(Dict_t* dict, Dict_t* view)"
+This function sets a view path from \f5dict\fP to \f5view\fP.
+This means that a search for an object in \f5dict\fP or a walk through it will
+continue to \f5view\fP and any dictionaries recursively viewed thereof.
+If \f5dict\fP is currently viewing a dictionary, that view is terminated
+before the new view is set.
+Then, if \f5view\fP is not \f5NULL\fP,
+a new view from \f5dict\fP to \f5view\fP is attempted.
+Thus, \f5dtview(dict,(Dict_t*)0)\fP can be used to terminate a view.
+An attempt to set a new view
+will fail if there is already a direct or indirect
+viewpath from \f5view\fP to \f5dict\fP
+or if the two dictionaries are not of the same type.
+Two dictionaries are of the same type if their discipline
+structures (\f5Dtdisc_t\fP)
+have the same values for \f5key\fP, \f5size\fP, and \f5(*comparf)()\fP.
+\f5dtview()\fP returns \f5NULL\fP on errors.
+On success, if \f5view\fP is \f5NULL\fP, \f5dtview()\fP returns the
+dictionary whose view from \f5dict\fP was ended.
+Otherwise, \f5dtview()\fP returns \f5view\fP.
+
+.Ss "  int dtreorder(Dict_t* dict, Dtcompar_f comparf)"
+This function changes the comparison function of \f5dict\fP
+to \f5(*comparf)()\fP.
+This change is allowed only if \f5dict\fP
+is not currently on a view path of dictionaries (see \f5dtview()\fP).
+Any duplicates found by the new comparison function will be deleted
+(see \f5Dtfree_f\fP).
+\f5dtreorder()\fP returns \f50\fP on success and \f5-1\fP on error.
+
+.PP
+.Ss "OBJECT OPERATIONS"
+.PP
+
+.Ss "  Void_p dtinsert(Dict_t* dict, Void_p obj)"
+This function inserts \f5obj\fP (or a copy of it made by \f5(*makef)()\fP
+when \f5(*makef)()\fP is not \f5NULL\fP)
+into the dictionary unless the dictionary already contains an object
+matching \f5obj\fP.
+Note that object'as addresses are passed between \fIlibdict\fP and the application code
+via the type \f5Void_p\fP.
+\f5dtinsert()\fP only operates on \f5dict\fP even if \f5dict\fP
+has a view on another dictionary (see \f5dtview()\fP).
+It returns the address of the new or matching object or \f5NULL\fP on failure.
+
+.Ss "  Void_p dtdelete(Dict_t* dict, Void_p obj)"
+This function deletes the object matching \f5obj\fP from the dictionary.
+If \f5obj\fP is \f5NULL\fP, all objects are deleted.
+This function only operates on \f5dict\fP even if \f5dict\fP
+has a view on another dictionary.
+It always returns \f5NULL\fP.
+
+.Ss "  Void_p dtsearch(Dict_t* dict, Void_p obj)"
+This function returns an object matching \f5obj\fP in \f5dict\fP or
+other dictionaries being viewed from \f5dict\fP (see \f5dtview()\fP).
+It returns \f5NULL\fP for no match.
+
+.Ss "  Void_p dtfirst(Dict_t* dict)"
+.Ss "  Void_p dtnext(Dict_t* dict, Void_p obj)"
+\f5dtfirst()\fP returns the first object in the dictionary.
+\f5dtnext()\fP returns the object following \f5obj\fP as defined by
+the dictionary ordering. If \f5obj\fP is \f5NULL\fP,
+\f5dtnext()\fP is equivalent to \f5dtfirst()\fP.
+Note that the ordering of objects in a hashed dictionary
+is not well-defined and may change dynamically
+on calls to \f5dtsearch()\fP and \f5dtinsert()\fP.
+.PP
+A way to walk a dictionary is:
+.br
+    \f5for(obj = dtfirst(dict); obj; obj = dtnext(dict,obj))\fP
+.PP
+Note that if \f5dict\fP has a view onto some other dictionaries (see \f5dtview()\fP),
+the objects in these dictionaries will also be traversed during the loop.
+Objects will be traversed dictionary by dictionary and any
+duplications will be ignored.
+In addition, when a view path is involved,
+only one \f5for(;;)\fP loop should be used.
+Nested loops may result in unexpected behaviors.
+See also \f5dtwalk()\fP and \f5dtflatten()\fP
+for alternative walking methods.
+
+.Ss "  Void_p dtlast(Dict_t* dict)"
+.Ss "  Void_p dtprev(Dict_t* dict, Void_p obj)"
+\f5dtlast()\fP returns the last object in \f5dict\fP or
+the last object in the bottom dictionary on a view path from \f5dict\fP.
+\f5dtprev()\fP returns the object preceding \f5obj\fP (see also \f5dtnext()\fP).
+If \f5obj\fP is \f5NULL\fP, \f5dtprev()\fP is equivalent to \f5dtlast()\fP.
+Similar to \f5dtfirst()/dtnext()\fP,
+\f5dtlast()/dtprev()\fP can be used to traverse a dictionary or a view path
+of dictionaries in reverse order.
+
+.Ss "  dtwalk(Dict_t* dict, int (*userf)(Void_p obj))"
+This function calls \f5(*userf)(obj)\fP on each object in their order.
+If \f5userf()\fP returns a \f5<0\fP value,
+\f5dtwalk()\fP terminates and returns the same value.
+Upon a successful traversal, \f5dtwalk()\fP returns \f50\fP.
+
+.Ss "  Dtlink_t* dtflatten(Dict_t* dict)"
+.Ss "  Dtlink_t* dtlink(Dict_t* dict, Dtlink_t* link)"
+.Ss "  Void_p dtobj(Dict_t* dict, Dtlink_t* link)"
+Using \f5dtfirst()/dtnext()\fP to walk dictionaries
+can incur large cost due to function calls.
+\f5dtflatten()\fP and \f5dtlink()\fP can be used to
+flatten the objects in \f5dict\fP into a linked list and
+walk them as follows:
+.br
+    \f5for(link = dtflatten(dict); link; link = dtlink(dict,link) )\fP
+.PP
+Here, \f5dtlink()\fP is a fast macro that
+returns the object in the linked list following \f5link\fP.
+Note that the return value of \f5dtflatten()\fP is of the type \f5Dtlink_t*\fP
+not \f5Void_p\fP. That is, it returns a dictionary object pointer
+not a user object pointer.
+The macro function \f5dtobj(dict,link)\fP should be used to
+get at the user object associated with \f5link\fP,
+If \f5dict\fP is on a view path of dictionaries (see \f5dtview()\fP),
+the flattened list of objects will also contain objects in other dictionaries
+viewable from  \f5dict\fP where repeated objects are ignored.
+The flattened object list will be unflattened on
+a subsequent dictionary operation on any of the involved dictionaries.
+
+.PP
+.Ss "DICTIONARY STATUS"
+.PP
+
+.Ss "  Dict_t* dtsize(Dict_t* dict)"
+This function returns the current number of objects stored in \f5dict\fP.
+
+.Ss "  Dict_t* dtgetview(Dict_t* dict)"
+This function returns the dictionary immediately viewed from \f5dict\fP if any.
+
+.Ss "  Dtstat_t* dtstat(Dict_t *dict, int all)"
+This function returns the pointer to a static \f5Dtstat_t\fP structure that
+reports statistics on the dictionary \f5dict\fP.
+If \f5all\fP is non-zero, all fields are filled.
+Otherwise, only the \f5dt_hash\fP and \f5dt_size\fP fields are filled.
+Following are the elements in \f5Dtstat_t\fP:
+.Tp
+\f5int\ dt_hash\fP:
+This is non-zero only if the dictionary is in hash mode.
+.Tp
+\f5int\ dt_size\fP:
+This contains the number of objects in the dictionary.
+.Tp
+\f5int\ dt_n\fP:
+In hashed mode, this is the number of non-empty chains in the hash table.
+In ordered mode, this is the maximum level number of the levels in the tree.
+Each level in the tree contains all nodes of equal distance from the root node.
+.Tp
+\f5int\ dt_max\fP:
+In hashed mode, this contains the size of a largest chain.
+In ordered mode, this is the size of a largest level.
+.Tp
+\f5int*\ dt_count\fP:
+In hashed mode, this is the list of counts for chains of particular sizes.
+For example, \f5dt_count[1]\fP is the number of chains of size \f51\fP.
+In ordered mode, this is the list of sizes of the levels.
+For example, \f5dt_count[1]\fP is the size of level \f51\fP.
+
+.PP
+.Ss "HASH FUNCTIONS"
+.PP
+
+.Ss "  dtcharhash(ulong h, uchar c)"
+.Ss "  dtstrhash(ulong h, uchar* str, int n)"
+These are macro functions to compute hash values from bytes or strings.
+They are useful for building customized hash functions.
+\f5dtcharhash()\fP computes a new hash value given the byte \f5c\fP
+and the current hash value accumulator \f5h\fP.
+Since \f5dtcharhash()\fP is a macro,
+\f5h\fP must be passed as itself, not by its address.
+\f5dtstrhash()\fP is a macro function to compute hash values for byte strings.
+If \f5n\fP is negative,
+\f5str\fP is considered a null-terminated string.
+Otherwise, \f5str\fP is a string of length \f5n\fP which
+may nor may not contain \f50\fP's.
+As with \f5dtcharhash()\fP,
+\f5h\fP must be passed to \f5dtstrhash()\fP as itself, not by its address.
+In this case, \f5dtstrhash()\fP will initialize \f5h\fP as appropriate.
+.SH NOTES
+.PP
+When a dictionary is ordered, objects are stored in
+a Tarjan-Sleator splay tree.
+This data structure guarantees that each search, insert, or delete operation
+has \fIO(logn)\fP amortized time complexity
+where \fIn\fP is the total number of objects.
+In addition, searching all objects in order is \fIO(n)\fP.
+The data structure is space economical as each object requires only two
+pointers for storage.
+When a dictionary is unordered, a hash table with chaining is used for fast access.
+In this case, the space overhead per object is slightly more but
+all access operations have \fIO(1)\fP averaged time complexity.
+.SH AUTHOR
+Kiem-Phong Vo (kpv@research.att.com), AT&T Bell Laboratories.

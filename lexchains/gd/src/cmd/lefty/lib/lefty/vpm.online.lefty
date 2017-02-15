@@ -1,0 +1,417 @@
+vpm.online.init = function () {
+    vpm.uifuncs = [
+        'rightdown' = vpm.online.rightdown;
+        'keyup' = vpm.online.keyup;
+        'redraw' = dotty.redraw;
+    ];
+    dotty.layoutmode = 'async';
+    vpm.layoutgraph = vpm.online.layoutgraph;
+    vpm.drawsgraph = vpm.online.drawsgraph;
+    vpm.drawnode = vpm.online.drawnode;
+    vpm.undrawnode = vpm.online.undrawnode;
+    vpm.removenode = vpm.online.removenode;
+    vpm.drawedge = vpm.online.drawedge;
+    vpm.undrawedge = vpm.online.undrawedge;
+    vpm.removeedge = vpm.online.removeedge;
+    monitorfile = vpm.online.monitorfile;
+    idle = vpm.online.idle;
+    vpm.online.idlemode = 'on';
+    if ((vpm.online.fd = openio ('pipe', 'cs', 'r',
+            concat ('%e -Texec -cif ', vpm.fname))) == -1) {
+        echo ('cannot open cs connection for file : ', vpm.fname);
+        return 0;
+    }
+    monitor ('on', vpm.online.fd);
+    vpm.online.consumelog = 'on';
+    vpm.online.string = '';
+    vpm.online.count = 0;
+    vpm.online.idlemode = 0;
+};
+vpm.online.layoutgraph = function (gt) {
+    vpm.online.needrelayout = 1;
+};
+vpm.online.drawsgraph = function (canvas, sgraph) {
+    dotty.drawsgraph (canvas, sgraph);
+    vpm.online.needredraw = 1;
+};
+vpm.online.drawnode = function (canvas, node) {
+    dotty.drawnode (canvas, node);
+    vpm.online.needredraw = 1;
+};
+vpm.online.undrawnode = function (canvas, node) {
+    dotty.undrawnode (canvas, node);
+    vpm.online.needredraw = 1;
+};
+vpm.online.removenode = function (gt, node) {
+    dotty.removenode (gt, node);
+    vpm.online.needredraw = 1;
+};
+vpm.online.drawedge = function (canvas, edge) {
+    dotty.drawedge (canvas, edge);
+    vpm.online.needredraw = 1;
+};
+vpm.online.undrawedge = function (canvas, edge) {
+    dotty.undrawedge (canvas, edge);
+    vpm.online.needredraw = 1;
+};
+vpm.online.removeedge = function (gt, edge) {
+    dotty.removeedge (gt, edge);
+    vpm.online.needredraw = 1;
+};
+vpm.online.monitorfile = function (data) {
+    local gt, mach, s, t, n, i, t2, entry, pid;
+    gt = dotty.graphs[dotty.views[vpm.canvas].gtid];
+    # if it's not from the trace log channel
+    if (data.fd ~= vpm.online.fd) {
+        if (dotty.monitorfile (data))
+            return;
+        mach = vpm.machfds[data.fd];
+        if (~(s = read (mach.fd))) {
+            echo ('empty message from pid server on ', mach.data.mname);
+            monitor ('off', mach.fd);
+            closeio (mach.fd);
+            mach.fd = -1;
+            for (i = 0; i < 4; i = i + 1) {
+                mach.fd = openio ('cs', concat ('/dev/udp/', mach.data.mname, '/pid'), 'r+');
+                echo ('cs re-connecting to pid on ', mach.data.mname, ' fd = ', mach.fd);
+                if (mach.fd ~= -1) {
+                    vpm.machfds[mach.fd] = mach;
+                    monitor ('on', mach.fd);
+                    mach.string = '';
+                    break;
+                }
+            }
+            for (pid in vpm.procs[mach.data.mid])
+                vpm.procs[mach.data.mid][pid].state = 0;
+            return;
+        }
+        t = split (concat (mach.string, s), '\n');
+        if ((n = tablesize (t)) == 1) {
+            mach.string = t[0];
+            return;
+        }
+        if (t[n - 1] ~= '')
+            mach.string = t[n - 1];
+        else
+            mach.string = '';
+        remove (n - 1, t);
+        n = n - 1;
+        for (i = 0; i < n; i = i + 1)
+            if (vpm.procs[mach.data.mid][t[i]].state == 1)
+                vpm.procs[mach.data.mid][t[i]].state = 2;
+        if (vpm.online.idlemode == 0)
+            idlerun ('on');
+        return;
+    }
+    if (~(s = read (vpm.online.fd))) {
+        echo ('end of file');
+        monitor ('off', vpm.online.fd);
+        closeio (vpm.online.fd);
+        return;
+    }
+    t = split (concat (vpm.online.string, s), '\n');
+    if ((n = tablesize (t)) == 1) {
+        vpm.online.string = t[0];
+        return;
+    }
+    if (t[n - 1] ~= '')
+        vpm.online.string = t[n - 1];
+    else
+        vpm.online.string = '';
+    remove (n - 1, t);
+    n = n - 1;
+    for (i = 0; i < n; i = i + 1) {
+        t2 = split (t[i], ' ');
+        entry = [
+            'full' = t[i];
+            'pid' = t2[1];
+            'mid' = t2[2];
+            'typ' = t2[4];
+            'arg0' = t2[6];
+            'arg1' = t2[7];
+            'arg2' = t2[8];
+            'rtn' = t2[tablesize (t2) - 1];
+        ];
+        vpm.processentry (gt, entry);
+        vpm.online.count = vpm.online.count + 1;
+    }
+    if (vpm.online.string ~= '' & vpm.online.count < 100)
+        return; # there's more to read, so don't redraw
+    if (~(gt.layoutpending > 0)) {
+        if (vpm.online.needrelayout)
+            dotty.layoutgraph (gt);
+        else if (vpm.online.needredraw)
+            dotty.drawgraph (gt.views, gt);
+        vpm.online.needredraw = 0;
+        vpm.online.needrelayout = 0;
+    }
+    vpm.online.count = 0;
+    if (vpm.online.idlemode == 0)
+        idlerun ('on');
+};
+vpm.online.idle = function (data) {
+    local gt, keep, mid, pid, proc, mach, kid, tokill;
+    gt = dotty.graphs[dotty.views[vpm.canvas].gtid];
+    keep = 0;
+    for (mid in vpm.procs) {
+        for (pid in vpm.procs[mid]) {
+            proc = vpm.procs[mid][pid];
+            if (proc.data.mname) {
+                mach = vpm.machs[proc.data.mname];
+                if (proc.state == 0 | proc.state == 2) {
+                    proc.count = proc.count + 1;
+                    keep = 1;
+                }
+                if (proc.state == 0 & proc.count > 15) {
+                    writeline (mach.fd, proc.data.pid);
+                    proc.state = 1;
+                    proc.count = 0;
+                } else if (proc.state == 2 & proc.count > 15) {
+                    tokill[proc.nid] = proc;
+                }
+            }
+        }
+    }
+    for (kid in tokill) {
+        echo ('killing ', tokill[kid].data.pid,
+                ' on machine ', tokill[kid].data.mname);
+        vpm.destroyproc (gt, tokill[kid]);
+    }
+    if (keep == 0) {
+        if (tablesize (vpm.held) > 0) {
+            vpm.released = vpm.held;
+            vpm.held = [];
+            vpm.releaseprocs (gt);
+        } else
+            idlerun ('off');
+        dotty.layoutgraph (gt);
+    }
+};
+vpm.online.cleanup = function (gt) {
+    local mid, pid, proc, mach, kid, tokill;
+    for (mid in vpm.procs) {
+        for (pid in vpm.procs[mid]) {
+            proc = vpm.procs[mid][pid];
+            if (proc.data.mname) {
+                mach = vpm.machs[proc.data.mname];
+                if (proc.state == 0) {
+                    writeline (mach.fd, proc.data.pid);
+                    proc.state = 1;
+                    proc.count = 0;
+                } else if (proc.state == 2) {
+                    tokill[proc.nid] = proc;
+                }
+            }
+        }
+    }
+    for (kid in tokill) {
+        echo ('killing ', tokill[kid].data.pid,
+                ' on machine ', tokill[kid].data.mname);
+        vpm.destroyproc (gt, tokill[kid]);
+    }
+};
+vpm.online.resetpids = function (gt) {
+    local mid, pid, i;
+    for (mid in vpm.machs) {
+        mach = vpm.machs[mid];
+        if (mach.fd ~= -1)
+            continue;
+        monitor ('off', mach.fd);
+        closeio (mach.fd);
+        for (i = 0; i < 4; i = i + 1) {
+            mach.fd = openio ('cs', concat ('/dev/udp/', mid, '/pid'), 'r+');
+            echo ('cs re-connecting to pid on ', mid, ' fd = ', mach.fd);
+            if (mach.fd ~= -1) {
+                vpm.machfds[mach.fd] = mach;
+                monitor ('on', mach.fd);
+                mach.string = '';
+                break;
+            }
+        }
+    }
+    for (mid in vpm.procs)
+        for (pid in vpm.procs[mid]) {
+            vpm.procs[mid][pid].state = 0;
+            vpm.procs[mid][pid].count = 0;
+        }
+    idlerun ('on');
+};
+vpm.online.restartpids = function (gt) {
+    local mid, pid, i;
+    for (mid in vpm.machs) {
+        mach = vpm.machs[mid];
+        if (mach.fd ~= -1) {
+            monitor ('off', mach.fd);
+            closeio (mach.fd);
+        }
+        for (i = 0; i < 4; i = i + 1) {
+            mach.fd = openio ('cs', concat ('/dev/udp/', mid, '/pid'), 'r+');
+            echo ('cs re-connecting to pid on ', mid, ' fd = ', mach.fd);
+            if (mach.fd ~= -1) {
+                vpm.machfds[mach.fd] = mach;
+                monitor ('on', mach.fd);
+                mach.string = '';
+                break;
+            }
+        }
+    }
+    idlerun ('on');
+};
+vpm.online.toggleconsume = function (gt, mode) {
+    if (mode == 'off' | vpm.online.consumelog == 'on') {
+        vpm.online.consumelog = 'off';
+        echo ('paused, type "s" to resume');
+        monitor ('off', vpm.online.fd);
+    } else {
+        vpm.online.consumelog = 'on';
+        monitor ('on', vpm.online.fd);
+        if (vpm.online.idlemode == 'off')
+            vpm.online.toggleidle (gt, 'on');
+        echo ('resumed');
+    }
+};
+vpm.online.toggleidle = function (gt, mode) {
+    if (mode == 'off' | vpm.online.idlemode == 'on') {
+        vpm.online.idlemode = 'off';
+        remove ('idle');
+    } else {
+        vpm.online.idlemode = 'on';
+        idle = vpm.online.idle;
+    }
+};
+vpm.online.kill = function (gt, proc, signum) {
+    local cmd;
+    cmd = concat ('rsh ', proc.data.mname, ' -n kill -', signum, ' ', proc.data.pid, ' &');
+    system (cmd);
+};
+vpm.online.rundbx = function (gt, proc) {
+    local t, n, i, dir, base, cmd;
+    if (proc.data.pname == '?') {
+        echo ('no name for process ', proc.data.pid);
+        return;
+    }
+    t = split (proc.data.pname, '/');
+    n = tablesize (t);
+    base = t[n - 1];
+    dir = "";
+    for (i = 1; i < n - 1; i = i + 1)
+        dir = concat (dir, '/', t[i]);
+    cmd = concat ('xrsh ', proc.data.mname, ' "cd ', dir, '; xterm -e dbx ', base, ' ', proc.data.pid, '"');
+    system (cmd);
+};
+vpm.online.menu1 = [
+    0 = "do layout";
+    1 = "redraw";
+    2 = "save graph";
+    3 = "zoom in";
+    4 = "zoom out";
+    5 = "find node";
+    6 = "clean up";
+    7 = "reset pids";
+    8 = "restart pids";
+    9 = "start/stop";
+    10 = "load file";
+    11 = "text view";
+    12 = "exit";
+];
+vpm.online.domenu1action = function (s, data) {
+    local vt, gt;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (s == "do layout")
+        dotty.layoutgraph (gt);
+    else if (s == "redraw")
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (s == "save graph")
+        dotty.savegraph (gt, null, 'file');
+    else if (s == "zoom in")
+        dotty.zoom (vt, 0.5);
+    else if (s == "zoom out")
+        dotty.zoom (vt, 2);
+    else if (s == "find node")
+        dotty.findnode (vt, gt);
+    else if (s == "clean up")
+        vpm.online.cleanup (gt);
+    else if (s == "reset pids")
+        vpm.online.resetpids (gt);
+    else if (s == "restart pids")
+        vpm.online.restartpids (gt);
+    else if (s == "start/stop")
+        vpm.online.toggleconsume (gt, null);
+    else if (s == "load file")
+        vpm.loadfile (null);
+    else if (s == "text view") {
+        if (dotty.txtview == 'on')
+            dotty.txtview = 'off';
+        else
+            dotty.txtview = 'on';
+        txtview (dotty.txtview);
+    } else if (s == "exit")
+        exit ();
+};
+vpm.online.menu2 = [
+    0 = "print entry";
+    1 = "print attr";
+    2 = "kill";
+    3 = "kill -9";
+    4 = "run dbx";
+];
+vpm.online.domenu2action = function (s, data) {
+    local vt, gt;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (s == "print entry") {
+        if (data.obj.nid >= 0)
+            dump (data.obj.data);
+    } else if (s == "print attr")
+        dump (data.obj.attr);
+    else if (s == "kill") {
+        if (data.obj.nid >= 0 & data.obj.data.kind == 'proc')
+            vpm.online.kill (gt, data.obj, 15);
+    } else if (s == "kill -9") {
+        if (data.obj.nid >= 0 & data.obj.data.kind == 'proc')
+            vpm.online.kill (gt, data.obj, 9);
+    } else if (s == "run dbx") {
+        if (data.obj.nid >= 0 & data.obj.data.kind == 'proc')
+            vpm.online.rundbx (gt, data.obj);
+    }
+};
+vpm.online.rightdown = function (data) {
+    local i;
+    if (data.obj) {
+        if ((i = displaymenu (data.widget, vpm.online.menu2)) >= 0)
+            vpm.online.domenu2action (vpm.online.menu2[i], data);
+    } else {
+        if ((i = displaymenu (data.widget, vpm.online.menu1)) >= 0)
+            vpm.online.domenu1action (vpm.online.menu1[i], data);
+    }
+};
+vpm.online.keyup = function (data) {
+    local vt, gt, kv;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (data.key == 'l')
+        dotty.layoutgraph (gt);
+    else if (data.key == 'Z')
+        dotty.zoom (vt, 0.9);
+    else if (data.key == 'z')
+        dotty.zoom (vt, 1.1);
+    else if (data.key == ' ')
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (data.key == 'c')
+        vpm.online.cleanup (gt);
+    else if (data.key == 's')
+        vpm.online.toggleconsume (gt, null);
+    else if (data.obj) {
+        if (data.key == 'a')
+            dotty.setattr (gt, data.obj);
+        else if (data.key == 'd') {
+            if (data.obj.eid >= 0 & data.obj.head.data.kind == 'file')
+                vpm.unlinkfile (gt, data.obj);
+            else {
+                if (data.obj.data.kind == 'proc')
+                    vpm.destroyproc (gt, data.obj);
+            }
+        }
+    }
+};

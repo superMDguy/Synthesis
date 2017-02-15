@@ -1,0 +1,10 @@
+Other examples include document summarization, image collection summarization and video summarization.
+Apart from Fully Automated Summarizers (FAS), there are systems that aid users with the task of summarization (MAHS = Machine Aided Human Summarization), for example by highlighting candidate passages to be included in the summary, and there are systems that depend on post-processing by a human (HAMS = Human Aided Machine Summarization).
+Summarization systems are able to create both query relevant text summaries and generic machine-generated summaries depending on what the user needs.
+Maximum entropy-based summarization[ edit ] During the DUC 2001 and 2002 evaluation workshops, TNO developed a sentence extraction system for multi-document summarization in the news domain.
+For example, work by Lin and Bilmes, 2012 [14] shows that submodular functions achieve the best results to date on DUC-04, DUC-05, DUC-06 and DUC-07 systems for document summarization.
+(February 2017) Specific applications of automatic summarization include:
+Evaluation techniques fall into intrinsic and extrinsic, [23] inter-textual and intra-textual.
+An intrinsic evaluation tests the summarization system in and of itself while an extrinsic evaluation tests the summarization based on how it affects the completion of some other task.
+The main drawback of the evaluation systems existing so far is that we need at least one reference summary, and for some methods more than one, to be able to compare automatic summaries with models.
+Challenging Issues of Automatic Summarization: Relevance Detection and Quality-based Evaluation .

@@ -1,0 +1,55 @@
+#!../tcldot
+
+# gdtest - display a dot file using xv - John.Ellson@att.com 
+#
+# Usage: gdtest <file.dot>
+#
+# This script demonstrates the use of additional gd commands 
+
+# find a dot file
+if {[llength $argv] == 0} {
+    puts "No dot file specified. Assuming demo."
+    set argv "data/poly.dot"
+}
+if {[llength $argv] > 1} {puts "Too many args."; exit}
+if {[catch {open $argv r} f]} {puts "unable to open dot file"; exit}
+set g [dotread $f]
+close $f
+
+# layout the graph (generate positional information)
+$g layout
+
+# find out actual size of graph
+scan [$g queryattr bb] "{%dp %dp %dp %dp}" ulx uly lrx lry
+
+# create image with extra space in lower right corner
+set gd [gd create [expr $lrx + 20] [expr $lry + 9]]
+
+# set some colors
+set transparent [gd color new $gd 254 254 254]
+gd color transparent $gd $transparent
+set black [gd color new $gd 0 0 0]
+set blue [gd color new $gd 128 128 255]
+
+# add a background
+if {! [catch {open data/smbluewhite_paper.gif r} f]} {
+    gd tile $gd [gd createFromGIF $f]
+    close $f
+    gd fill $gd tiled 0 0
+}
+
+# add a signature
+gd fillpolygon $gd $blue [expr $lrx - 20] [expr $lry + 9] \
+                         [expr $lrx - 20] [expr $lry - 3] \
+                         [expr $lrx - 16] [expr $lry - 7] \
+		  	 [expr $lrx + 20] [expr $lry - 7] \
+		  	 [expr $lrx + 20] [expr $lry + 9]
+gd text $gd small $black [expr $lrx - 18] [expr $lry - 5] "TclDot"
+ 
+# render graph
+$g rendergd $gd
+
+# display using xv
+if {[catch {open "| xv -" w} f]} {puts "unable to open output pipe to xv"; exit}
+gd writeGIF $gd $f
+close $f

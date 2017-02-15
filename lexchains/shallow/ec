@@ -1,0 +1,140 @@
+
+input sentence: COMPANIES/NNS/company that/WDT/that announce/VBP/announce breakthroughs/NNS/breakthrough in/IN/in medical/JJ/medical science/NN/science usually/RB/usually get/VB/get a/DT/a hero/NN/hero 's/POS/'s welcome/JJ/welcome ././.
+
+COMPANIES(1)/@n_seq/company breakthroughs(4)/@n_seq/breakthrough science(7)/@n_seq/science hero(11)/@n_seq/hero breakthroughs(4)-in(5)-science(7)/@n_prep_n/breakthrough-in-science medical(6)-science(7)/@a_n_b/medical-science breakthroughs(4)-get(9)/@s_v_a/breakthrough-get announce(3)-breakthroughs(4)/@v_o_a/announce-breakthrough get(9)-hero(11)/@v_o_a/get-hero 
+
+input sentence: But/CC/But whereas/IN/whereas surgeons/NNS/surgeon applauded/VBD/applaud when/WRB/when Health/NNP/Health Care/NNP/Care International/NNP/International (/(/( HCI/NNP/HCI )/SYM/) ,/,/, a/DT/a private/JJ/private hospital/NN/hospital ,/,/, announced/VBD/announce this/DT/this month/NN/month that/IN/that one/CD/one of/IN/of its/PRP$/its doctors/NNS/doctor had/VBD/have invented/VBN/invent an/DT/an anaesthetic/JJ/anaesthetic machine/NN/machine which/WDT/which means/VBZ/mean people/NNS/people feel/VBP/feel much/RB/much less/RBR/less sick/JJ/sick after/IN/after operations/NNS/operation and/CC/and speeds/NNS/speed their/PRP$/their recovery/NN/recovery ,/,/, reaction/NN/reaction in/IN/in Scotland/NNP/Scotland was/VBD/be less/JJR/less than/IN/than ecstatic/NN/ecstatic ././.
+
+surgeons(3)/@n_seq/surgeon Health(6)-Care(7)-International(8)/@n_seq/Health-Care-International HCI(10)/@n_seq/HCI hospital(15)/@n_seq/hospital month(19)/@n_seq/month doctors(24)/@n_seq/doctor machine(29)/@n_seq/machine people(32)/@n_seq/people operations(38)/@n_seq/operation speeds(40)/@n_seq/speed recovery(42)/@n_seq/recovery reaction(44)/@n_seq/reaction Scotland(46)/@n_seq/Scotland ecstatic(50)/@n_seq/ecstatic reaction(44)-in(45)/@n_prep_n/reaction-in people(32)-sick(36)/@a_n_a/people-sick reaction(44)-less(48)/@a_n_a/reaction-less private(14)-hospital(15)/@a_n_b/private-hospital anaesthetic(28)-machine(29)/@a_n_b/anaesthetic-machine surgeons(3)-applauded(4)/@s_v_a/surgeon-applaud doctors(24)-had(25)/@s_v_a/doctor-have people(32)-feel(33)/@s_v_a/people-feel reaction(44)-was(47)/@s_v_a/reaction-be announced(17)-month(19)/@v_o_a/announce-month doctors(24)-invented(26)/@v_o_b/doctor-invent invented(26)-machine(29)/@v_o_d/invent-machine Health(6)-Care(7)-International(8)/@pn_unt/Health-Care-International International(8)/@pn_unt/International HCI(10)/@pn_unt/HCI HCI(10)/@pn_unt/HCI Scotland(46)/@pn_unt/Scotland Scotland(46)/@pn_unt/Scotland 
+
+input sentence: &/CC/&
+
+
+
+input sentence: In/IN/In 1994,/CD/1994, HCI/NNP/HCI opened/VBD/open a/DT/a swanky/JJ/swanky 240/CD/240 -/:/- bed/NN/bed private/JJ/private hospital/NN/hospital to/TO/to do/VB/do expensive/JJ/expensive surgery/NN/surgery on/IN/on rich/JJ/rich foreigners/NNS/foreigner at/IN/at Clydebank/NNP/Clydebank in/IN/in Glasgow/NNP/Glasgow ././.
+
+HCI(3)/@n_seq/HCI bed(9)/@n_seq/bed hospital(11)/@n_seq/hospital surgery(15)/@n_seq/surgery foreigners(18)/@n_seq/foreigner Clydebank(20)/@n_seq/Clydebank Glasgow(22)/@n_seq/Glasgow bed(9)-hospital(11)/@n_n_a/bed-hospital surgery(15)-on(16)-foreigners(18)/@n_prep_n/surgery-on-foreigner foreigners(18)-at(19)/@n_prep_n/foreigner-at private(10)-hospital(11)/@a_n_b/private-hospital expensive(14)-surgery(15)/@a_n_b/expensive-surgery rich(17)-foreigners(18)/@a_n_b/rich-foreigner opened(4)/@s_v_a/open do(13)-surgery(15)/@v_o_a/do-surgery HCI(3)/@pn_unt/HCI HCI(3)/@pn_unt/HCI Clydebank(20)/@pn_unt/Clydebank Clydebank(20)/@pn_unt/Clydebank Glasgow(22)/@pn_unt/Glasgow Glasgow(22)/@pn_unt/Glasgow 
+
+input sentence: Though/IN/Though it/PRP/it promised/VBD/promise hundreds/NNS/hundred of/IN/of jobs/NNS/job in/IN/in an/DT/an area/NN/area of/IN/of long/JJ/long dole/NN/dole queues/NNS/queue ,/,/, it/PRP/it went/VBD/go straight/JJ/straight to/TO/to the/DT/the top/NN/top of/IN/of the/DT/the local/JJ/local hate/NN/hate list/NN/list ././.
+
+hundreds(4)/@n_seq/hundred jobs(6)/@n_seq/job area(9)/@n_seq/area dole(12)-queues(13)/@n_seq/dole-queue top(20)/@n_seq/top hate(24)-list(25)/@n_seq/hate-list dole(12)-queues(13)/@n_n_a/dole-queue hate(24)-list(25)/@n_n_a/hate-list hundreds(4)-of(5)-jobs(6)/@n_prep_n/hundred-of-job jobs(6)-in(7)-area(9)/@n_prep_n/job-in-area area(9)-of(10)-queues(13)/@n_prep_n/area-of-queue top(20)-of(21)-list(25)/@n_prep_n/top-of-list straight(17)/@a_n_a/straight long(11)-queues(13)/@a_n_b/long-queue local(23)-list(25)/@a_n_b/local-list long(11)-dole(12)/@a_n_ba/long-dole local(23)-hate(24)/@a_n_ba/local-hate promised(3)/@s_v_a/promise went(16)/@s_v_a/go promised(3)-hundreds(4)/@v_o_a/promise-hundred 
+
+input sentence: In/IN/In an/DT/an area/NN/area which/WDT/which prides/VBZ/pride itself/PRP/itself on/IN/on being/VBG/be the/DT/the cradle/NN/cradle of/IN/of socialism/NN/socialism a/DT/a century/NN/century ago/RB/ago ,/,/, it/PRP/it was/VBD/be regarded/VBN/regard as/IN/as an/DT/an evil/JJ/evil changeling/NN/changeling ,/,/, not/RB/not least/JJS/least because/IN/because the/DT/the Tory/NNP/Tory government/NN/government had/VBD/have promised/VBN/promise a/DT/a 30m/CD/30m grant/NN/grant to/TO/to help/VB/help build/VB/build it/PRP/it ././.
+
+area(3)/@n_seq/area cradle(10)/@n_seq/cradle socialism(12)/@n_seq/socialism century(14)/@n_seq/century changeling(23)/@n_seq/changeling Tory(29)-government(30)/@n_seq/Tory-government grant(35)/@n_seq/grant Tory(29)-government(30)/@n_n_a/Tory-government cradle(10)-of(11)-socialism(12)/@n_prep_n/cradle-of-socialism evil(22)-changeling(23)/@a_n_b/evil-changeling was(18)/@s_v_a/be government(30)-had(31)/@s_v_a/government-have prides(5)/@v_o_a/pride build(38)/@v_o_a/build regarded(19)/@v_o_b/regard government(30)-promised(32)/@v_o_b/government-promise being(8)-cradle(10)/@v_o_d/be-cradle promised(32)-grant(35)/@v_o_d/promise-grant Tory(29)/@pn_unt/Tory Tory(29)/@pn_unt/Tory 
+
+input sentence: &/CC/&
+
+
+
+input sentence: The/DT/The critics/NNS/critic felt/VBD/feel themselves/PRP/themselves thoroughly/RB/thoroughly justified/VBD/justify when/WRB/when ,/,/, four/CD/four months/NNS/month after/IN/after it/PRP/it had/VBD/have opened/VBN/open ,/,/, HCI/NNP/HCI went/VBD/go bust/NN/bust because/IN/because its/PRP$/its forecasts/NNS/forecast of/IN/of patient/NN/patient numbers/NNS/number had/VBD/have been/VBN/be hopelessly/RB/hopelessly optimistic/JJ/optimistic ././.
+
+critics(2)/@n_seq/critic months(10)/@n_seq/month HCI(16)/@n_seq/HCI bust(18)/@n_seq/bust forecasts(21)/@n_seq/forecast patient(23)-numbers(24)/@n_seq/patient-number patient(23)-numbers(24)/@n_n_a/patient-number months(10)-after(11)/@n_prep_n/month-after forecasts(21)-of(22)-numbers(24)/@n_prep_n/forecast-of-number forecasts(21)-optimistic(28)/@a_n_a/forecast-optimistic critics(2)-felt(3)/@s_v_a/critic-feel months(10)-had(13)/@s_v_a/month-have went(17)/@s_v_a/go forecasts(21)-had(25)/@s_v_a/forecast-have felt(3)/@v_o_a/feel went(17)-bust(18)/@v_o_a/go-bust months(10)-opened(14)/@v_o_b/month-open forecasts(21)-been(26)/@v_o_b/forecast-be HCI(16)/@pn_unt/HCI HCI(16)/@pn_unt/HCI 
+
+input sentence: The/DT/The Abu/NNP/Abu Dhabi/NNP/Dhabi Investment/NNP/Investment Company/NNP/Company bought/VBD/buy the/DT/the bankrupt/JJ/bankrupt business/NN/business ,/,/, saving/VBG/save the/DT/the government/NN/government some/DT/some embarrassment/NN/embarrassment ,/,/, although/IN/although this/DT/this did/VBD/do little/JJ/little to/TO/to change/VB/change local/JJ/local opinion/NN/opinion ,/,/, which/WDT/which regards/VBZ/regard it/PRP/it as/IN/as a/DT/a parasite/NN/parasite on/IN/on the/DT/the National/NNP/National Health/NNP/Health Service/NNP/Service ././.
+
+Abu(2)-Dhabi(3)-Investment(4)-Company(5)/@n_seq/Abu-Dhabi-Investment-Company business(9)/@n_seq/business government(13)/@n_seq/government embarrassment(15)/@n_seq/embarrassment opinion(24)/@n_seq/opinion parasite(31)/@n_seq/parasite National(34)-Health(35)-Service(36)/@n_seq/National-Health-Service bankrupt(8)-business(9)/@a_n_b/bankrupt-business local(23)-opinion(24)/@a_n_b/local-opinion bought(6)/@s_v_a/buy bought(6)-business(9)/@v_o_a/buy-business change(22)-opinion(24)/@v_o_a/change-opinion regards(27)/@v_o_a/regard saving(11)-government(13)/@v_o_c/save-government saving(11)-government(13)/@v_o_d/save-government Abu(2)-Dhabi(3)-Investment(4)-Company(5)/@pn_unt/Abu-Dhabi-Investment-Company Company(5)/@pn_unt/Company National(34)-Health(35)-Service(36)/@pn_unt/National-Health-Service Service(36)/@pn_unt/Service 
+
+input sentence: &/CC/&
+
+
+
+input sentence: This/DT/This view/NN/view might/MD/might also/RB/also have/VB/have been/VBN/be thought/VBN/think by/IN/by critics/NNS/critic to/TO/to be/VB/be justified/VBN/justify when/WRB/when Gavin/NNP/Gavin Kenny/NNP/Kenny ,/,/, a/DT/a professor/NN/professor of/IN/of anaesthesia/NN/anaesthesia at/IN/at Glasgow/NNP/Glasgow University/NNP/University ,/,/, shifted/VBD/shift his/PRP$/his research/NN/research team/NN/team from/IN/from Glasgow/NNP/Glasgow Royal/NNP/Royal Infirmary/NNP/Infirmary to/TO/to HCI/NNP/HCI ,/,/, lured/VBN/lure by/IN/by lavish/JJ/lavish facilities/NNS/facility ././.
+
+view(2)/@n_seq/view critics(9)/@n_seq/critic Gavin(14)-Kenny(15)/@n_seq/Gavin-Kenny professor(18)/@n_seq/professor anaesthesia(20)/@n_seq/anaesthesia Glasgow(22)-University(23)/@n_seq/Glasgow-University research(27)-team(28)/@n_seq/research-team Glasgow(30)-Royal(31)-Infirmary(32)/@n_seq/Glasgow-Royal-Infirmary HCI(34)/@n_seq/HCI facilities(39)/@n_seq/facility research(27)-team(28)/@n_n_a/research-team view(2)-by(8)-critics(9)/@n_prep_n/view-by-critic professor(18)-of(19)-anaesthesia(20)/@n_prep_n/professor-of-anaesthesia anaesthesia(20)-at(21)/@n_prep_n/anaesthesia-at team(28)-from(29)/@n_prep_n/team-from lavish(38)-facilities(39)/@a_n_b/lavish-facility view(2)-might(3)/@s_v_a/view-might shifted(25)-team(28)/@v_o_a/shift-team view(2)-thought(7)/@v_o_b/view-think Gavin(14)-Kenny(15)/@pn_unt/Gavin-Kenny Kenny(15)/@pn_unt/Kenny Glasgow(22)-University(23)/@pn_unt/Glasgow-University University(23)/@pn_unt/University Glasgow(30)-Royal(31)-Infirmary(32)/@pn_unt/Glasgow-Royal-Infirmary Infirmary(32)/@pn_unt/Infirmary HCI(34)/@pn_unt/HCI HCI(34)/@pn_unt/HCI 
+
+input sentence: But/CC/But Mr/NNP/Mr Kenny/NNP/Kenny 's/POS/'s move/NN/move speeded/VBD/speed up/IN/up work/NN/work on/IN/on a/DT/a machine/NN/machine which/WDT/which uses/VBZ/use micro/JJ/micro -/:/- computers/NNS/computer to/TO/to control/VB/control the/DT/the rate/NN/rate at/IN/at which/WDT/which an/DT/an anaesthetic/NN/anaesthetic is/VBZ/be pumped/VBN/pump into/IN/into the/DT/the blood/NN/blood of/IN/of patients/NNS/patient undergoing/VBG/undergo surgery/NN/surgery ././.
+
+Mr(2)-Kenny(3)/@n_seq/Mr-Kenny move(5)/@n_seq/move work(8)/@n_seq/work machine(11)/@n_seq/machine computers(16)/@n_seq/computer rate(20)/@n_seq/rate anaesthetic(24)/@n_seq/anaesthetic blood(29)/@n_seq/blood patients(31)/@n_seq/patient surgery(33)/@n_seq/surgery move(5)-up(7)-work(8)/@n_prep_n/move-up-work work(8)-on(9)-machine(11)/@n_prep_n/work-on-machine anaesthetic(24)-into(27)-blood(29)/@n_prep_n/anaesthetic-into-blood blood(29)-of(30)-patients(31)/@n_prep_n/blood-of-patient Kenny(3)-move(5)/@n_s_n_c/Kenny-move undergoing(32)-surgery(33)/@a_n_b/undergo-surgery move(5)-speeded(6)/@s_v_a/move-speed anaesthetic(24)-is(25)/@s_v_a/anaesthetic-be control(18)-rate(20)/@v_o_a/control-rate anaesthetic(24)-pumped(26)/@v_o_b/anaesthetic-pump Mr(2)-Kenny(3)/@pn_unt/Mr-Kenny Kenny(3)/@pn_unt/Kenny 
+
+input sentence: &/CC/&
+
+
+
+input sentence: Such/JJ/Such machines/NNS/machine are/VBP/be nothing/NN/nothing new/JJ/new ././.
+
+machines(2)/@n_seq/machine nothing(4)/@n_seq/nothing Such(1)-machines(2)/@a_n_b/Such-machine machines(2)-are(3)/@s_v_a/machine-be are(3)-nothing(4)/@v_o_a/be-nothing 
+
+input sentence: But/CC/But Mr/NNP/Mr Kenny/NNP/Kenny 's/POS/'s device/NN/device uses/VBZ/use two/CD/two micro/JJ/micro -/:/- computers/NNS/computer to/TO/to achieve/VB/achieve much/RB/much closer/JJR/close monitoring/NN/monitoring of/IN/of the/DT/the pump/NN/pump feeding/VBG/feed the/DT/the anaesthetic/NN/anaesthetic into/IN/into the/DT/the patient/NN/patient ././.
+
+Mr(2)-Kenny(3)/@n_seq/Mr-Kenny device(5)/@n_seq/device computers(10)/@n_seq/computer monitoring(15)/@n_seq/monitoring pump(18)/@n_seq/pump anaesthetic(21)/@n_seq/anaesthetic patient(24)/@n_seq/patient monitoring(15)-of(16)-pump(18)/@n_prep_n/monitoring-of-pump anaesthetic(21)-into(22)-patient(24)/@n_prep_n/anaesthetic-into-patient Kenny(3)-device(5)/@n_s_n_c/Kenny-device closer(14)-monitoring(15)/@a_n_b/close-monitoring device(5)-uses(6)/@s_v_a/device-use achieve(12)-monitoring(15)/@v_o_a/achieve-monitoring feeding(19)-anaesthetic(21)/@v_o_d/feed-anaesthetic Mr(2)-Kenny(3)/@pn_unt/Mr-Kenny Kenny(3)/@pn_unt/Kenny 
+
+input sentence: Extensive/JJ/Extensive testing/NN/testing of/IN/of the/DT/the equipment/NN/equipment has/VBZ/have sufficiently/RB/sufficiently impressed/VBN/impress the/DT/the authorities/NNS/authority which/WDT/which regulate/VBP/regulate medical/JJ/medical equipment/NN/equipment in/IN/in Britain/NNP/Britain and/CC/and ,/,/, so/RB/so far/RB/far ,/,/, four/CD/four other/JJ/other countries/NNS/country ,/,/, to/TO/to make/VB/make this/DT/this the/DT/the first/JJ/first such/JJ/such machine/NN/machine to/TO/to be/VB/be licenced/VBN/licence for/IN/for commercial/JJ/commercial sale/NN/sale to/TO/to hospitals/NNS/hospital ././.
+
+testing(2)/@n_seq/testing equipment(5)/@n_seq/equipment authorities(10)/@n_seq/authority equipment(14)/@n_seq/equipment Britain(16)/@n_seq/Britain countries(24)/@n_seq/country machine(32)/@n_seq/machine sale(38)/@n_seq/sale hospitals(40)/@n_seq/hospital testing(2)-of(3)-equipment(5)/@n_prep_n/testing-of-equipment equipment(14)-in(15)/@n_prep_n/equipment-in sale(38)-to(39)-hospitals(40)/@n_prep_n/sale-to-hospital Extensive(1)-testing(2)/@a_n_b/Extensive-testing medical(13)-equipment(14)/@a_n_b/medical-equipment other(23)-countries(24)/@a_n_b/other-country first(30)-machine(32)/@a_n_b/first-machine such(31)-machine(32)/@a_n_b/such-machine commercial(37)-sale(38)/@a_n_b/commercial-sale testing(2)-has(6)/@s_v_a/testing-have regulate(12)-equipment(14)/@v_o_a/regulate-equipment testing(2)-impressed(8)/@v_o_b/testing-impress impressed(8)-authorities(10)/@v_o_d/impress-authority Britain(16)/@pn_unt/Britain Britain(16)/@pn_unt/Britain 
+
+input sentence: &/CC/&
+
+
+
+input sentence: The/DT/The anaesthetic/RB/anaesthetic used/VBN/use by/IN/by Mr/NNP/Mr Kenny/NNP/Kenny 's/POS/'s machine/NN/machine is/VBZ/be propofol/VBG/propofol ,/,/, which/WDT/which has/VBZ/have been/VBN/be in/IN/in use/NN/use for/IN/for about/IN/about ten/CD/ten years/NNS/year ././.
+
+Mr(5)-Kenny(6)/@n_seq/Mr-Kenny machine(8)/@n_seq/machine use(16)/@n_seq/use years(20)/@n_seq/year Kenny(6)-machine(8)/@n_s_n_c/Kenny-machine machine(8)-is(9)/@s_v_a/machine-be Mr(5)-Kenny(6)/@pn_unt/Mr-Kenny Kenny(6)/@pn_unt/Kenny 
+
+input sentence: It/PRP/It reduces/VBZ/reduce the/DT/the sickness/NN/sickness felt/VBN/feel by/IN/by patients/NNS/patient after/IN/after they/PRP/they wake/VBP/wake up/IN/up from/IN/from an/DT/an operation/NN/operation ././.
+
+sickness(4)/@n_seq/sickness patients(7)/@n_seq/patient operation(14)/@n_seq/operation sickness(4)-by(6)-patients(7)/@n_prep_n/sickness-by-patient patients(7)-after(8)/@n_prep_n/patient-after reduces(2)/@s_v_a/reduce patients(7)-wake(10)/@s_v_a/patient-wake sickness(4)-felt(5)/@v_o_b/sickness-feel 
+
+input sentence: However/RB/However ,/,/, difficulties/NNS/difficulty in/IN/in controlling/VBG/control the/DT/the dosage/NN/dosage have/VBP/have always/RB/always meant/VBN/mean that/IN/that anaesthetists/NNS/anaesthetist have/VBP/have also/RB/also had/VBN/have to/TO/to rely/VB/rely on/IN/on anaesthetic/JJ/anaesthetic gases/NNS/gas breathed/VBD/breathe in/IN/in through/IN/through a/DT/a face/NN/face mask/NN/mask ././.
+
+difficulties(3)/@n_seq/difficulty dosage(7)/@n_seq/dosage anaesthetists(12)/@n_seq/anaesthetist gases(20)/@n_seq/gas face(25)-mask(26)/@n_seq/face-mask face(25)-mask(26)/@n_n_a/face-mask anaesthetic(19)-gases(20)/@a_n_b/anaesthetic-gas difficulties(3)-have(8)/@s_v_a/difficulty-have anaesthetists(12)-have(13)/@s_v_a/anaesthetist-have gases(20)-breathed(21)/@s_v_a/gas-breathe difficulties(3)-meant(10)/@v_o_b/difficulty-mean anaesthetists(12)-had(15)/@v_o_b/anaesthetist-have 
+
+input sentence: These/DT/These gases/NNS/gas cause/VBP/cause post/NN/post -/:/- operative/JJ/operative nausea/NN/nausea in/IN/in about/IN/about half/NN/half of/IN/of all/DT/all patients/NNS/patient ././.
+
+gases(2)/@n_seq/gas post(4)/@n_seq/post nausea(7)/@n_seq/nausea half(10)/@n_seq/half patients(13)/@n_seq/patient half(10)-of(11)-patients(13)/@n_prep_n/half-of-patient operative(6)-nausea(7)/@a_n_b/operative-nausea gases(2)-cause(3)/@s_v_a/gas-cause cause(3)-post(4)/@v_o_a/cause-post 
+
+input sentence: Mr/NNP/Mr Kenny/NNP/Kenny 's/POS/'s machine/NN/machine reduces/VBZ/reduce or/CC/or eliminates/VBZ/eliminate the/DT/the need/NN/need for/IN/for such/JJ/such gases/NNS/gas ././.
+
+Mr(1)-Kenny(2)/@n_seq/Mr-Kenny machine(4)/@n_seq/machine need(9)/@n_seq/need gases(12)/@n_seq/gas need(9)-for(10)-gases(12)/@n_prep_n/need-for-gas Kenny(2)-machine(4)/@n_s_n_c/Kenny-machine such(11)-gases(12)/@a_n_b/such-gas machine(4)-reduces(5)/@s_v_a/machine-reduce eliminates(7)-need(9)/@v_o_a/eliminate-need Mr(1)-Kenny(2)/@pn_unt/Mr-Kenny Kenny(2)/@pn_unt/Kenny 
+
+input sentence: Tests/NNS/test at/IN/at HCI/NNP/HCI ,/,/, which/WDT/which is/VBZ/be using/VBG/use Mr/NNP/Mr Kenny/NNP/Kenny 's/POS/'s machine/NN/machine on/IN/on all/DT/all its/PRP$/its patients/NNS/patient ,/,/, and/CC/and at/IN/at other/JJ/other hospitals/NNS/hospital show/VBP/show that/IN/that the/DT/the machine/NN/machine cuts/VBZ/cut the/DT/the proportion/NN/proportion of/IN/of patients/NNS/patient suffering/VBG/suffer nausea/NN/nausea to/TO/to less/JJR/less than/IN/than 10%./CD/10%.
+
+Tests(1)/@n_seq/test HCI(3)/@n_seq/HCI Mr(8)-Kenny(9)/@n_seq/Mr-Kenny machine(11)/@n_seq/machine patients(15)/@n_seq/patient hospitals(20)/@n_seq/hospital machine(24)/@n_seq/machine proportion(27)/@n_seq/proportion patients(29)/@n_seq/patient nausea(31)/@n_seq/nausea Tests(1)-at(2)/@n_prep_n/test-at machine(11)-on(12)-patients(15)/@n_prep_n/machine-on-patient proportion(27)-of(28)-patients(29)/@n_prep_n/proportion-of-patient Kenny(9)-machine(11)/@n_s_n_c/Kenny-machine other(19)-hospitals(20)/@a_n_b/other-hospital suffering(30)-nausea(31)/@a_n_b/suffer-nausea hospitals(20)-show(21)/@s_v_a/hospital-show machine(24)-cuts(25)/@s_v_a/machine-cut cuts(25)-proportion(27)/@v_o_a/cut-proportion using(7)/@v_o_d/use HCI(3)/@pn_unt/HCI HCI(3)/@pn_unt/HCI Mr(8)-Kenny(9)/@pn_unt/Mr-Kenny Kenny(9)/@pn_unt/Kenny 
+
+input sentence: So/RB/So most/RBS/most patients/NNS/patient thus/RB/thus treated/VBN/treat recover/VB/recover from/IN/from the/DT/the anaesthetic/NN/anaesthetic in/IN/in hours/NNS/hour rather/RB/rather than/IN/than days/NNS/day ,/,/, says/VBZ/say Mr/NNP/Mr Kenny/NNP/Kenny ././.
+
+patients(3)/@n_seq/patient anaesthetic(9)/@n_seq/anaesthetic hours(11)/@n_seq/hour days(14)/@n_seq/day Mr(17)-Kenny(18)/@n_seq/Mr-Kenny patients(3)-from(7)-anaesthetic(9)/@n_prep_n/patient-from-anaesthetic anaesthetic(9)-in(10)-hours(11)/@n_prep_n/anaesthetic-in-hour hours(11)-than(13)-days(14)/@n_prep_n/hour-than-day patients(3)-recover(6)/@s_v_a/patient-recover says(16)/@v_o_a/say Mr(17)-Kenny(18)/@pn_unt/Mr-Kenny Kenny(18)/@pn_unt/Kenny 
+
+input sentence: &/CC/&
+
+
+
+input sentence: Anaesthetists/NNS/anaesthetist who/WP/who have/VBP/have either/DT/either tried/VBN/try the/DT/the machine/NN/machine ,/,/, or/CC/or seen/VBD/see it/PRP/it demonstrated/VBD/demonstrate at/IN/at medical/JJ/medical conferences/NNS/conference ,/,/, are/VBP/be enthusiastic/JJ/enthusiastic ././.
+
+Anaesthetists(1)/@n_seq/anaesthetist machine(7)/@n_seq/machine conferences(15)/@n_seq/conference medical(14)-conferences(15)/@a_n_b/medical-conference demonstrated(12)/@s_v_a/demonstrate tried(5)-machine(7)/@v_o_d/try-machine 
+
+input sentence: So/RB/So are/VBP/be hospital/NN/hospital administrators/NNS/administrator ././.
+
+hospital(3)-administrators(4)/@n_seq/hospital-administrator hospital(3)-administrators(4)/@n_n_a/hospital-administrator are(2)-administrators(4)/@v_o_a/be-administrator 
+
+input sentence: Mr/NNP/Mr Kenny/NNP/Kenny says/VBZ/say that/IN/that studies/NNS/study in/IN/in America/NNP/America have/VBP/have shown/VBN/show that/IN/that ,/,/, although/IN/although the/DT/the drug/NN/drug costs/NNS/cost about/IN/about $14/CD/$14 (/(/( 9/CD/9 )/SYM/) more/JJR/more per/IN/per operation/NN/operation than/IN/than conventional/JJ/conventional drugs/NNS/drug ,/,/, faster/JJR/fast patient/NN/patient recovery/NN/recovery time/NN/time can/MD/can save/VB/save about/IN/about $400/CD/$400 per/IN/per patient/NN/patient ././.
+
+Mr(1)-Kenny(2)/@n_seq/Mr-Kenny studies(5)/@n_seq/study America(7)/@n_seq/America drug(14)-costs(15)/@n_seq/drug-cost operation(23)/@n_seq/operation drugs(26)/@n_seq/drug patient(29)-recovery(30)-time(31)/@n_seq/patient-recovery-time patient(37)/@n_seq/patient drug(14)-costs(15)/@n_n_a/drug-cost patient(29)-recovery(30)/@n_n_a/patient-recovery recovery(30)-time(31)/@n_n_a/recovery-time patient(29)-time(31)/@n_n_aa/patient-time studies(5)-in(6)/@n_prep_n/study-in operation(23)-than(24)-drugs(26)/@n_prep_n/operation-than-drug conventional(25)-drugs(26)/@a_n_b/conventional-drug faster(28)-time(31)/@a_n_b/fast-time faster(28)-recovery(30)/@a_n_ba/fast-recovery says(3)/@s_v_a/say studies(5)-have(8)/@s_v_a/study-have time(31)-save(33)/@s_v_a/time-save studies(5)-shown(9)/@v_o_b/study-show Mr(1)-Kenny(2)/@pn_unt/Mr-Kenny Kenny(2)/@pn_unt/Kenny America(7)/@pn_unt/America America(7)/@pn_unt/America 
+
+input sentence: The/DT/The British/JJ/British makers/NNS/maker of/IN/of the/DT/the computer/NN/computer -/:/- controlled/VBN/control pump/VB/pump say/VBP/say they/PRP/they will/MD/will cost/VB/cost about/IN/about 1,500,/CD/1,500, not/RB/not much/RB/much more/JJR/more than/IN/than conventional/JJ/conventional anaesthetic/JJ/anaesthetic pumps/NNS/pump ././.
+
+makers(3)/@n_seq/maker computer(6)/@n_seq/computer pumps(22)/@n_seq/pump makers(3)-of(4)-computer(6)/@n_prep_n/maker-of-computer British(2)-makers(3)/@a_n_b/British-maker conventional(20)-pumps(22)/@a_n_b/conventional-pump anaesthetic(21)-pumps(22)/@a_n_b/anaesthetic-pump cost(13)/@s_v_a/cost 
+
+input sentence: Use/VB/Use of/IN/of it/PRP/it was/VBD/be authorised/VBN/authorise only/RB/only in/IN/in August/NNP/August ,/,/, but/CC/but they/PRP/they already/RB/already have/VBP/have orders/NNS/order for/IN/for 400./CD/400.
+
+August(8)/@n_seq/August orders(14)/@n_seq/order was(4)/@s_v_a/be have(13)/@s_v_a/have have(13)-orders(14)/@v_o_a/have-order authorised(5)/@v_o_b/authorise August(8)/@pn_unt/August August(8)/@pn_unt/August 
+
+input sentence: &/CC/&
+
+
+
+input sentence: The/DT/The Edinburgh/NNP/Edinburgh house/NN/house in/IN/in which/WDT/which Sir/NNP/Sir James/NNP/James Young/NNP/Young Simpson/NNP/Simpson ,/,/, another/DT/another Scottish/NNP/Scottish doctor/NN/doctor ,/,/, discovered/VBD/discover the/DT/the first/JJ/first modern/JJ/modern anaesthetic/NN/anaesthetic ,/,/, chloroform/NN/chloroform ,/,/, in/IN/in 1846/CD/1846 has/VBZ/have a/DT/a commemorative/JJ/commemorative plaque/NN/plaque on/IN/on it/PRP/it ././.
+
+Edinburgh(2)-house(3)/@n_seq/Edinburgh-house Sir(6)-James(7)-Young(8)-Simpson(9)/@n_seq/Sir-James-Young-Simpson Scottish(12)-doctor(13)/@n_seq/Scottish-doctor anaesthetic(19)/@n_seq/anaesthetic chloroform(21)/@n_seq/chloroform plaque(28)/@n_seq/plaque Edinburgh(2)-house(3)/@n_n_a/Edinburgh-house Scottish(12)-doctor(13)/@n_n_a/Scottish-doctor plaque(28)-on(29)/@n_prep_n/plaque-on first(17)-anaesthetic(19)/@a_n_b/first-anaesthetic modern(18)-anaesthetic(19)/@a_n_b/modern-anaesthetic commemorative(27)-plaque(28)/@a_n_b/commemorative-plaque discovered(15)-anaesthetic(19)/@v_o_a/discover-anaesthetic has(25)-plaque(28)/@v_o_a/have-plaque Edinburgh(2)/@pn_unt/Edinburgh Edinburgh(2)/@pn_unt/Edinburgh Sir(6)-James(7)-Young(8)-Simpson(9)/@pn_unt/Sir-James-Young-Simpson Simpson(9)/@pn_unt/Simpson Scottish(12)/@pn_unt/Scottish Scottish(12)/@pn_unt/Scottish 
+
+input sentence: Mr/NNP/Mr Kenny/NNP/Kenny may/MD/may eventually/RB/eventually be/VB/be as/RB/as esteemed/VBN/esteem as/IN/as Sir/NNP/Sir James/NNP/James ././.
+
+Mr(1)-Kenny(2)/@n_seq/Mr-Kenny Sir(9)-James(10)/@n_seq/Sir-James may(3)/@s_v_a/may esteemed(7)/@v_o_b/esteem Mr(1)-Kenny(2)/@pn_unt/Mr-Kenny Kenny(2)/@pn_unt/Kenny Sir(9)-James(10)/@pn_unt/Sir-James James(10)/@pn_unt/James 
+
+input sentence: But/CC/But whether/IN/whether his/PRP$/his innovation/NN/innovation encourages/VBZ/encourage the/DT/the Scots/NNS/scot to/TO/to pay/VB/pay more/JJR/more regard/NN/regard to/TO/to HCI/NNP/HCI remains/VBZ/remain to/TO/to be/VB/be seen/VBN/see ././.
+
+innovation(4)/@n_seq/innovation Scots(7)/@n_seq/scot regard(11)/@n_seq/regard HCI(13)/@n_seq/HCI regard(11)-to(12)/@n_prep_n/regard-to more(10)-regard(11)/@a_n_b/more-regard innovation(4)-encourages(5)/@s_v_a/innovation-encourage regard(11)-remains(14)/@s_v_a/regard-remain encourages(5)-Scots(7)/@v_o_a/encourage-scot pay(9)-regard(11)/@v_o_a/pay-regard HCI(13)/@pn_unt/HCI HCI(13)/@pn_unt/HCI 
+
+input sentence: &/CC/&
+
+

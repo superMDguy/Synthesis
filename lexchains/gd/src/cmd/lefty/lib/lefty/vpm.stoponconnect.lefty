@@ -1,0 +1,15 @@
+vpm.stoponconnect = function (gt, socket, mid, fid) {
+    local mid1, fid1, n;
+    n = 0;
+    for (mid1 in socket.data.mids)
+        for (fid1 in socket.data.mids[mid1])
+            n = n + 1;
+echo (n);
+    if (n > 1) {
+        vpm.online.toggleconsume (gt, 'off');
+        vpm.online.toggleidle (gt, 'off');
+    }
+};
+vpm.appendfunc ("linksocket2socket", vpm.stoponconnect, 4);
+
+

@@ -1,0 +1,22 @@
+# X11LIB=/usr/add-on/X11/lib
+# X11INC=/usr/add-on/X11/include
+
+X11LIB=/usr/lib/X11
+X11INC=/usr/include/X11
+
+CC=gcc
+YACC=yacc
+SED=sed
+RM=rm -f
+RANLIB=ranlib
+MKDIR=mkdir
+AR=ar
+LD=ld
+MV=mv
+CP=cp
+AWK=nawk
+SORT=sort
+INSTALL=install
+
+CCFLAGS=-fpic -O
+LDFLAGS=

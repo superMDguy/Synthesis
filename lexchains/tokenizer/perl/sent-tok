@@ -1,0 +1,140 @@
+#!/usr/bin/perl
+
+#
+# Division into sentences (via sgmlsent) and tokenization (via tokenize).
+#
+#  sent-tok input-file [output-file (default is stdout)] [c=comment_char]
+#
+#
+#  (C)  Ido Dagan and Yuval Krymolowski, IR lab, Bar Ilan University,
+#       Ramat Gan, Israel
+#
+
+#
+# Some general definitions and pointers to invoked commands
+#
+$curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+unshift(@INC,$curdir) ;
+require "misc-defs" ;
+
+#
+# create input for sgmlsent, text to be divided is put between
+# <p> and </p> (usually <p> in the beginning and </p> at the end). 
+# if a comment character is specified - lines beginning with that
+# character are excluded from sgmlsent input (by adding </p> 
+# before and <p> after so the line is outside a <p>-</p> block).
+#
+# send the file with <p> and </p> to sgmlsent via pipe
+#
+
+($infile, $arg2, $arg3) = @ARGV ;
+
+$usage = <<"EOM" ;
+This perl performs division into sentences (via sgmlsent) and tokenization.
+
+Usage:
+     sent-tok input-file [output-file] (default is stdout) [c=comment_char]
+
+EOM
+
+
+if ($arg2)
+ {
+  if ($arg2 =~ /c=/i)
+    { $comment_char = substr($arg2,2) ;}
+    else
+    { $outfile = $arg2 ;}
+   }
+       
+if ($arg3)
+ { if ($arg3 =~ /c=/i)
+    { if ($comment_char)
+       { die "$usage" ;
+         }
+      $comment_char = substr($arg3,2) ;
+      }
+    else
+    { if ($outfile)
+      { die "$usage" ;
+        }
+      $outfile = $arg3 ;
+     }
+   }
+
+if (! $infile)
+ { die "$usage" ;
+   }
+
+open (INPUT, '<'.$infile) || die "Could not open $infile\n" ;
+
+# direct output to stdout if no file name was given
+if (! $outfile)
+ { $outfile = "-" ;
+   }
+
+# sgmlsent output file, will be the tokenizing input
+$sentout = $tmp_dir."/sent.out" ;
+if ($UNIX)
+ { $sentout = $sentout . '.' . $file_name_suffix ;
+   }
+
+# $| = $TRUE ;
+
+open (SENT_IN, "| $sent_cmd -o$sentout")
+    || die "Could not open pipe to senctence program\n" ;
+
+# The header/footer for sgmlsent (<p> is the default)
+$sgml_type = 'p' ;
+$start_pat = '<'.$sgml_type.'>' ;
+$end_pat = '</'.$sgml_type.'>' ;
+
+# begin the file with <p> so the tokenization perl will identify it as an
+# output of sgmlsent.
+print SENT_IN "$start_pat\n" ;
+# print SENT_IN "$end_pat\n" ;
+
+# copy the file data to sgmlsent input file
+
+$in_comment = $FALSE ;
+
+while ($line = <INPUT>)
+
+ { 
+   if (($comment_char) && ($line =~ /^\Q$comment_char/))
+     { # the current line is a comment, the previous line is not,
+       # mark enter_comment (for writing </p>) and in_comment (for next line)
+       if (! $in_comment)
+        { $enter_comment = $TRUE ;
+          $in_comment = $TRUE ;
+          } 
+       }
+    else
+     { # the current line is not a comment, the previous line is,
+       # mark exit_comment (for writing <p>) and unmark in_comment (for next line)
+       if ($in_comment)
+        { $exit_comment = $TRUE ;
+          $in_comment = $FALSE ;
+          }
+       }
+   # place comment lines outside sgmlsent input 
+   if ($enter_comment)
+    { print SENT_IN "$end_pat\n" ;
+      $enter_comment = $FALSE ;
+      }
+   
+   if ($exit_comment)
+    { print SENT_IN "$start_pat\n" ;
+      $exit_comment = $FALSE ;
+      }
+   
+   print SENT_IN "$line" ;
+   }
+
+# last input line: </p>
+if (! $in_comment) { print SENT_IN "$end_pat\n" ; }
+# here the sgmlsent command is executed
+close(SENT_IN) ; wait  || die "Pipe to sentence program failed - code $? \n" if $? ;
+chmod (511, $sentout) ;
+
+system ("$token_cmd $sentout $outfile"); wait
+ || die "problem in tokenization of $sentout\n" ;

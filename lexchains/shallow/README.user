@@ -1,0 +1,74 @@
+Shallow Parser User Information:
+--------------------------------
+
+The shallow parser was developed by Ido Dagan and Yuval Krymolowski, based on
+work by Dror Ben-Arie and Ilan Kirsh. Contact yuvalk@cs.biu.ac.il for technical
+issues.
+
+The shallow parser extracts from a sentence short combinations of words
+which satisfy certain fundamental relations such as verb-object,
+subject-verb, adjective-noun. It is implemented as a Perl script, created
+automatically from a rule file. The goal is only to extract
+relations, not to parse the sentence deeply, hence only dependencies
+of a local nature are handled (i.e., compound sentences or very complicated
+phrases are not likely to be analyzed correctly).
+
+Other README files:
+-------------------
+
+ README.format - Input and output files format
+
+ README.logic  - Shallow parser logic and rule file language manual
+
+
+Files:
+------
+
+ rules:
+
+    Contains the shallow parsing rules, which identify local structures
+    and important words within them. The rules are written using a simple
+    syntax.
+
+ comp:
+
+    A compiler Perl script, converts the rule file (e.g., 'rules') into the
+    shallow parser Perl script (e.g., 'rules.cmp') .
+
+ *.skl:
+
+    Skeletons used by the compiler.
+
+
+
+Compilation and Shallow Parsing:
+--------------------------------
+
+ Compilation:
+
+     comp rule-file-name
+
+  compiles the rule file into rule-file-name.cmp, using the skeleton
+  files (*.skl) . It searches for the skeletons in the directory pointed
+  to by Environment Variable SKEL_DIR or, if the variable is not defined,
+  in the current directory.
+
+
+ Using the Shallow Parser:
+
+  Suppose the rule file is 'rules', than
+
+   rules.cmp < input-file > output-file
+
+  runs the shallow parser.
+  
+Input and Output Files Format:
+------------------------------
+
+ See file README.format
+
+
+Logic and Rule File Manual:
+---------------------------
+
+ See file README.logic

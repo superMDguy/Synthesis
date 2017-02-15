@@ -1,0 +1,229 @@
+ 
+       =================================================================
+
+       A   C o m m o n L i s p   I n t e r f a c e   t o   W o r d N e t
+
+       =================================================================
+
+
+
+                             <<< About WordNet >>>
+
+  Professor George Miller of the Cognitive Science Laboratory of Princeton
+University directed the development a lexicographic database called WordNet.
+
+  Princeton maintains a server by which the WordNet database can be browsed via
+the World Wide Web.
+
+  The WordNet database is implemented as a set of text files.  Mark Nahabedian
+(naha@ai.mit.edu) has developed an interface to this database written in
+CommonLisp.  This software provides an interface by which CommonLisp programs
+can access lexicgraphic data from WordNet.
+
+
+
+                         <<< CommonLisp Interface >>>
+
+  The interface is written in several layers:
+
+  * a base layer
+  * record extraction
+  * record parsing
+  * data representation
+  * pointer reasoning
+
+  There is also a simple browser implemented in CLIM for navigating the WordNet
+database.
+
+  This software represents parts of speech as lisp keyword symbols: :noun,
+:verb, :adjective and :adverb.
+
+  The current version of this software only knows how to find WordNet index and
+data files as they are named in the UNIX implementation of WordNet.  Set the
+value of the parameter wn::+wordnet-database-directory+ in the file
+"wordnet-database-files.lisp" to the pathname of the directory where these
+files can be found.
+
+  The current version has only been tested with Symbolics Genera.  The software
+might require slight modification to run on other Lisp Implementations.  All
+the files can be found here.
+
+
+*** The Base Layer
+
+  The base layer defines the packages and export lists for this software.  It
+is implemented by these files:
+
+  * packages.lisp
+  * parts-of-speech.lisp
+
+
+*** Record Extraction
+
+  The record extraction layer is the bottom-most one.  It implements functions
+which extract records from the database files as text strings.
+
+  (index-entry-for-word <file-description> <word>)
+    Looks up <word> in the specified index file and returns the string
+    corresponding to that record of the index file.  The <file-description>
+    argument can either be a part of speech keyword, a pathname naming an index
+    file, or a stream which has been opened to that file.
+
+  (read-data-file-entry <file-descriptioni> <offset>)
+    Reads a WordNet "symset" record from the specified <offset> in the
+    specified file.  A string is returned.  Offset was either read from an
+    index record, or from a pointer description in another synset record.  The
+    <file-description> argument should identify a WordNet data file.  It should
+    either be a part of speech keyword, a pathname, or a stream.
+
+  This layer is implemented by the file wordnet-database-files.lisp.
+
+  This layer depends on the files in the base layer.
+
+
+*** Record Parsing
+
+  The functions in this layer take strings as returned by the functions of the
+record extraction layer.  They parse those strings into components, returning
+them as multiple values.
+
+  (parse-index-file-entry <entry>)
+    Parse the <entry> as returned by <index-entry-for-word>.  See the
+    definition for a list of the values returned.
+
+  (parse-data-file-entry <entry>)
+    Parse the <entry> as returned by read-data-file-entry. See the definition
+    for a list of the values returned.
+
+  This layer is implemented by the file parse-wordnet-data.lisp.
+
+  This layer depends on the files in the base layer.
+
+
+*** Data Representation
+
+  The data representation was chosen to parallel WordNet's own representation.
+It models index entries, synonym sets and pointers.  Depending on ones
+application, there might well be more useful ways to represent the WordNet
+lexicon.  Practice might lead us to modify this representation or develop a new
+one.
+
+  Class wn:wordnet-index-entry
+    Objects of this class are used to represent entries read from the index
+    files.  They are created and returned by the function
+    wn:cached-index-lookup.
+
+  (wn:cached-index-lookup <word> <part-of-speech>)
+    Looks up <word> in the index file corresponding to <part-of-speech> and
+    returns an index entry object for it.
+
+  (wn:index-entry-synsets <index-entry>)
+    Returns a list of the synonym sets, as wn:wordnet-synset-entry objects,
+    which <index-entry> refers to.
+
+  Class wn:wordnet-synset-entry
+    Objects of this class represent synonym sets.  There is a subclass for each
+    part of speech:
+    * wn:wordnet-noun-entry
+    * wn:wordnet-adjective-entry
+    * wn:wordnet-adverb-entry
+    * wn:wordnet-verb-entry
+
+  (wn:synset-words <synset>)
+    Returns a list of "words" that are in the synonym set <synset>.  Each word
+    is represented by a list, the first element of which is the word as a
+    string.  The second element is the sense number assigned by the
+    lexicographer.
+								
+  (wn:wordnet-pointers <synset>)
+    Returns a list of the wordnet pointers from the specified <synset>.
+
+  Class wn:wordnet-pointer
+    These are how wordnet pointers are represented.
+
+  (wn:wordnet-pointer-type <pointer>)
+    Returns the wordnet pointer type for <pointer>, e.g. :antonym, :hypernym,
+    :entailment, etc.
+
+  (wordnet-pointer-from-synset <pointer>)
+    Returns the synonym set which <pointer> points from.
+
+  (wordnet-pointer-to-synset <pointer>)
+    Returns the synonym set which <pointer> points to.
+
+  (wordnet-pointer-from-word <pointer>)
+  (wordnet-pointer-to-word <pointer>)
+    If <pointer> refers to a specific word in the synonym set, that word (as a
+    list of string and sense number) are returned, otherwise the synonym set is
+    returned.
+
+  This layer is implemented by the file representation.lisp.
+
+  This layer depends on the files in the base layer, the record extraction
+layer and the record parsing layer.
+
+
+
+*** Pointer Reasoning
+
+  This layer provides some functions for operating on the graph formed by
+WordNet synonym sets and the pointer relationships among them.  Here follows a
+description of the operations currently provided.  This set is expected to grow
+with time.
+
+  (wn:relation-transitive-closure <synset> <relation-type>)
+    <relation-type> must be a WordNet pointer type representing a transitive
+    relation.  This function returns a set which is the transitive closure of
+    that relation starting with <synset>.  The closure set is returned as a
+    list.  Each element of the list is a cons whose car is a synset object and
+    whose cdr is an integer rpresenting the distance along the <relation-type>
+    between this synset and <synset>.
+
+  (wn:commonality <relation-type> &rest <synsets>)
+    Finds the common "ancestors" of the synset objects in <synsets> along the
+    <relation-type> graph.  It returns a list, the first element of which is
+    the closest common ancestor.  The rest of the list has one element for each
+    of <synsets>.  Each element is a cons whose car is one of the <synsets> and
+    whose cdr is the distance from this synset to the common ancestor.
+
+  This Layer is implemented by the file relationship-algorithms.lisp.
+
+  This layer depends on the data representation layer.
+
+
+*** Browser
+
+  The browser provides a simple user interface for examining the wordnet
+database.  It defines CLIM presentation types and commands for displaying the
+objects defined in the data representation layer.
+
+  It depends on the data representation layer, and on the layers on which that
+layer depends.
+
+  The browser also depends on a domonstration lisp interactor implemented in
+CLIM, which in the Symbolics Genera CLIM distribution can be found in the
+directory "sys>clim>rel-2>demo>listener.lisp".
+
+  The command :Lookup takes a string as argument.  It looks up that string in
+the indices and prints out a list of index entries that were found.
+
+  You can click on one of these index entries to get a list of the synonym sets
+that it refers to.
+
+  Clicking on a synonym set will list the pointer references that it has to
+other synsets.  The presentation of the pointer includes a presentation of the
+synset that it points to.  You can click in it in turn to see its pointers.
+
+
+*** Examples
+
+  Some examples have been written which illustrate the use of this software.
+Included are functions which list synonyms and antonyms for a specified word,
+and a function which lists the names and nicknames of the U.S. States.
+
+  There is also a function which tries to identify the synset for a word having
+a sense most similar to a specified word by comparing distances along hypernym
+pointers among the synsets for the word being looked up and the sense
+indicating word.
+
+wnlisp

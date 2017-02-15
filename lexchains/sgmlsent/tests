@@ -1,0 +1,19 @@
+#!/bin/sh
+# no paragraph indicators, just sentencize selected regions
+
+# within the TEXT segment
+sgmlsent -p "TEXT" <sample.txt
+echo '***************************************************'
+
+# within the SUMMARY segment
+sgmlsent -p "SUMMARY" <sample.txt
+echo '**************************************************'
+
+# now crudely add paragraph markers and use them...
+sed 's/<SUMMARY>/&<p>/
+s/<\/SUMMARY>/<\/p>&/
+s/<TEXT>/&<p>/
+s/<\/TEXT>/<\/p>&/
+s/^$/<\/p>\
+<p>/' sample.txt | sgmlsent
+

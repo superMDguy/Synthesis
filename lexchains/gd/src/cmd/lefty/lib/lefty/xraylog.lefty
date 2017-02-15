@@ -1,0 +1,243 @@
+#
+# XRAY logs
+#
+xray.logkeys = [
+    'action' = 'action';
+    'caller' = 'caller';
+    'callee' = 'callee';
+    'edge' = 'edge';
+    'callcount' = 'callcount';
+    'args' = 'args';
+    'ln' = 'ln';
+    'call' = 'call';
+    'rtn' = 'rtn';
+];
+xray.initlog = function () {
+};
+xray.loadlog = function (run) {
+    local f, s, t, l;
+    if ((f = openio ('file', run.log, 'r')) == -1)
+        return;
+    run.logarray = [];
+    run.logn = 0;
+    run.logi = -1;
+    stack = [];
+    stackn = 0;
+    l = 0;
+    while ((s = readline (f))) {
+        l = l + 1;
+        if (l % 1000 == 0)
+            echo ('at line ', l);
+        t = split (s, ':');
+        if (t[0] == 'C')
+            xray.addcall (run, t[2], t[1], l);
+        else if (t[0] == 'R')
+            xray.addreturn (run, l);
+        else if (t[0] == 'A')
+            xray.addargs (run, t[1]);
+    }
+    closeio (f);
+    remove ('stackn');
+    remove ('stack');
+};
+xray.addcall = function (run, nameb, fileb, l) {
+    local nodea, nodeb, edge, keys;
+    keys = xray.logkeys;
+    nodea = stack[stackn - 1].callee;
+    if (~(nodeb = run.gt.graph.nodes[run.nodemap[fileb][nameb]])) {
+        echo ('creating node ', nameb, ' at line ', l);
+        nodeb = xray.insertnode (run, nameb, fileb);
+    }
+    nodeb.maxcalls = nodeb.maxcalls + 1;
+    if (nodea & ~(edge =
+            run.gt.graph.edges[run.edgemap[nodea.nid][nodeb.nid]])) {
+        echo ('creating edge from ', nodea.attr.label, ' to ',
+                nameb, ' at line ', l);
+        edge = xray.insertedge (run, nodea, nodeb);
+    }
+    edge.maxcalls = edge.maxcalls + 1;
+    run.logarray[run.logn] = [
+        keys.action = keys.call;
+        keys.caller = nodea;
+        keys.callee = nodeb;
+        keys.edge = edge;
+        keys.callcount = nodeb.maxcalls;
+        keys.args = null;
+        keys.ln = l;
+    ];
+    stack[stackn] = run.logarray[run.logn];
+    stackn = stackn + 1;
+    run.logn = run.logn + 1;
+};
+xray.addargs = function (run, args) {
+    run.logarray[run.logn - 1].args = args;
+};
+xray.addreturn = function (run, l) {
+    local keys;
+    keys = xray.logkeys;
+    run.logarray[run.logn] = [
+        keys.action = keys.rtn;
+        keys.caller = stack[stackn - 2].callee;
+        keys.callee = stack[stackn - 1].callee;
+        keys.edge = stack[stackn - 1].edge;
+        keys.callcount = stack[stackn - 1].callcount;
+        keys.args = null;
+        keys.ln = l;
+    ];
+    stackn = stackn - 1;
+    run.logn = run.logn + 1;
+};
+xray.adjustlog = function (run) {
+    local lid1, lid2, first, lp;
+    lid1 = 0;
+    lid2 = 0;
+    first = run.logn;
+    while (lid2 < run.logn) {
+        lp = run.logarray[lid2];
+        if ((lp.edge & ~run.gt.graph.edges[lp.edge.eid]) |
+                ~run.gt.graph.nodes[lp.callee.nid]) {
+            if (first > lid2)
+                first = lid2;
+            lid2 = lid2 + 1;
+            while (lid2 < run.logn &
+                    (run.logarray[lid2].callee ~= lp.callee |
+                    run.logarray[lid2].callcount ~= lp.callcount))
+                lid2 = lid2 + 1;
+            lid2 = lid2 + 1;
+            continue;
+        }
+        run.logarray[lid1] = run.logarray[lid2];
+        lid1 = lid1 + 1;
+        lid2 = lid2 + 1;
+    }
+    for (lid2 = lid1; lid2 < run.logn; lid2 = lid2 + 1)
+        remove (lid2, run.logarray);
+    run.logn = lid1;
+    return first;
+};
+xray.grouplogbyfile = function (run, file, gnode) {
+    local lid, lp;
+    for (lid = 0; lid < run.logn; lid = lid + 1) {
+        lp = run.logarray[lid];
+        if (lp.caller.attr.file == file | lp.callee.attr.file == file) {
+            if (lp.caller.attr.file == file)
+                lp.caller = gnode;
+            if (lp.callee.attr.file == file)
+                lp.callee = gnode;
+            if (lp.edge)
+                lp.edge = run.gt.graph.edges[run.edgemap[lp.caller.nid][lp.callee.nid]];
+        }
+    }
+};
+xray.resetcallcount = function (run) {
+    local stack, stackn, nid, eid, lid, lp, keys;
+    stack = [];
+    stackn = 0;
+    keys = xray.logkeys;
+    for (nid in run.gt.graph.nodes)
+        run.gt.graph.nodes[nid].maxcalls = 0;
+    for (eid in run.gt.graph.edges)
+        run.gt.graph.edges[eid].maxcalls = 0;
+    for (lid = 0; lid < run.logn; lid = lid + 1) {
+        lp = run.logarray[lid];
+        if (lp.action == keys.call) {
+            lp.callee.maxcalls = lp.callee.maxcalls + 1;
+            lp.callcount = lp.callee.maxcalls;
+            lp.edge.maxcalls = lp.edge.maxcalls + 1;
+            stack[stackn] = lp;
+            stackn = stackn + 1;
+        } else {
+            lp.callcount = stack[stackn - 1].callcount;
+            stackn = stackn - 1;
+        }
+    }
+    xray.colorgraph (run);
+};
+xray.drawlog = function (run, i, dir) {
+    local nodea, nodeb, edge, lp;
+    lp = run.logarray[i];
+    nodea = lp.caller;
+    nodeb = lp.callee;
+    edge = lp.edge;
+    if ((lp.action == 'call' & dir == 1) | (lp.action == 'rtn' & dir == -1)) {
+        xray.pushstack (run, lp.callee, lp.callcount, lp.args);
+        xray.drawframe (run, run.stackn - 1, 1);
+        if (edge) {
+            if (~edge.onstack)
+                edge.onstack = 1;
+            else
+                edge.onstack = edge.onstack + 1;
+            xray.coloredge (run, edge);
+        }
+        if (~nodeb.onstack)
+            nodeb.onstack = 1;
+        else
+            nodeb.onstack = nodeb.onstack + 1;
+        xray.colornode (run, nodeb);
+    } else {
+        xray.drawframe (run, run.stackn - 1, 0);
+        xray.popstack (run);
+        if (edge) {
+            edge.onstack = edge.onstack - 1;
+            xray.coloredge (run, edge);
+        }
+        nodeb.onstack = nodeb.onstack - 1;
+        xray.colornode (run, nodeb);
+    }
+};
+xray.resetlog = function (run) {
+    local nid, node, eid, edge;
+    while (run.stackn > 0) {
+        xray.drawframe (run, run.stackn - 1, 0);
+        xray.popstack (run);
+    }
+    for (nid in run.gt.graph.nodes) {
+        node = run.gt.graph.nodes[nid];
+        if (node.onstack) {
+            remove ('onstack', node);
+            xray.colornode (run, node);
+        }
+    }
+    for (eid in run.gt.graph.edges) {
+        edge = run.gt.graph.edges[eid];
+        if (edge.onstack) {
+            remove ('onstack', edge);
+            xray.coloredge (run, edge);
+        }
+    }
+    run.logi = -1;
+};
+xray.nextlogentry = function (run) {
+    if ((run.logi = run.logi + 1) == run.logn) {
+        run.logi = -1;
+        xray.resetlog (run);
+        return;
+    }
+    xray.drawlog (run, run.logi, 1);
+};
+xray.prevlogentry = function (run) {
+    if (run.logi == -1)
+        run.logi = run.logn - 1;
+    xray.drawlog (run, run.logi, -1);
+    run.logi = run.logi - 1;
+};
+xray.playfulllog = function (run) {
+    xray.resetlog (run);
+    xray.nextlogentry (run);
+    if (run.playdelay) {
+        while (run.logi ~= -1) {
+            sleep (run.playdelay);
+            xray.nextlogentry (run);
+        }
+    } else {
+        while (run.logi ~= -1)
+            xray.nextlogentry (run);
+    }
+};
+xray.playloguntil = function (run, node) {
+    while (run.logi ~= -1) {
+        xray.nextlogentry (run);
+        if (run.logarray[run.logi].callee == node)
+            break;
+    }
+};

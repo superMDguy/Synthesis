@@ -1,0 +1,58 @@
+#!/usr/bin/perl
+
+#
+# Dividing into sentences and tagging (Brill's tagger) via sent-tok-tag
+#  and adding lemas (vie morph-file)
+#
+#   sent-morph input-file [c=comment_char] (passed to sent-tok-tag for sent-tok)
+# 
+#  always writes to stdout
+#
+#
+#  (C)  Ido Dagan and Yuval Krymolowski, IR lab, Bar Ilan University,
+#       Ramat Gan, Israel
+#
+
+
+#
+# Some general definitions and pointers to invoked commands
+#
+
+$curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+unshift(@INC,$curdir) ;
+require "misc-defs" ;
+
+$usage = <<"EOM" ;
+This perl performs division into sentences+tokenization+tagging (Brill)
+(via sent-tok-tag), it adds a lema to the tagged words.
+
+Usage:
+     sent-morph input-file [c=comment_char] (output is always sent to stdout)
+
+EOM
+
+($infile, $ccom) = @ARGV ;
+
+if (! $infile)
+{ die "$usage" ;
+  }
+
+$sent_tok_tag_outfile = $tmp_dir."/sent-tok-tag.out" ;
+if ($UNIX)
+ { $sent_tok_tag_outfile = $sent_tok_tag_outfile . '.' . $file_name_suffix ;
+    }
+
+$cmd = "$sent_tok_tag_cmd $infile $ccom > $sent_tok_tag_outfile" ;
+
+system ($cmd) ; wait
+  || die "Sentencing,tokenizing+tagging was unsuccessful, code $?\n". 
+	 " command was \'$cmd\'\n" ;
+chmod(511, $sent_tok_tag_outfile) ;
+
+
+$cmd = "$morph_cmd < $sent_tok_tag_outfile" ;
+
+system ($cmd) ; wait
+  || die "Morphology was unsuccessful, code $?\n". 
+	 " command was \'$cmd\'\n" ;
+

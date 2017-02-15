@@ -1,0 +1,139 @@
+#
+# XRAY interface to DOTTY
+#
+load ('dotty.lefty');
+xray.initdag = function () {
+    dotty.init ();
+    dot.graphattr.rankdir = 'LR';
+    dot.nodeattr.style = 'filled';
+    dot.nodeattr.color = xray.coldcolor;
+    dot.nodeattr.fontcolor = 'white';
+    xray.funcs = [
+        'leftdown' = xray.leftdown;
+        'leftmove' = xray.leftmove;
+        'middledown' = xray.middledown;
+        'middlemove' = xray.middlemove;
+        'rightdown' = xray.rightdown;
+        'keyup' = xray.keyup;
+        'redraw' = dotty.redraw;
+    ];
+};
+#
+#
+#
+xray.creategraph = function (run) {
+    local nid, eid;
+    run.dcanvas = dotty.createviewandgraph (run.dag, 'file', [
+        'name' = run.dag;
+        'funcs' = xray.funcs;
+    ]);
+    run.vt = dotty.views[run.dcanvas];
+    run.gt = dotty.graphs[run.vt.gtid];
+    for (nid in run.gt.graph.nodes)
+        run.gt.graph.nodes[nid].maxcalls = 0;
+    for (eid in run.gt.graph.edges)
+        run.gt.graph.edges[eid].maxcalls = 0;
+    run.colors = [
+        xray.coldcolor = dotty.getcolor (run.gt.views, xray.coldcolor);
+        xray.calledcolor = dotty.getcolor (run.gt.views, xray.calledcolor);
+        xray.hotcolor = dotty.getcolor (run.gt.views, xray.hotcolor);
+        xray.onstackcolor = dotty.getcolor (run.gt.views, xray.onstackcolor);
+        'black' = dotty.getcolor (run.gt.views, 'black');
+        'white' = dotty.getcolor (run.gt.views, 'white');
+    ];
+};
+xray.destroygraph = function (run) {
+    dotty.destroyview (run.vt);
+};
+xray.insertnode = function (run, name, file) {
+    local node;
+    node = dotty.insertnode (run.gt, null, null, [
+        'label' = name;
+        'file' = file;
+        'color' = xray.coldcolor;
+    ]);
+    node.maxcalls = 0;
+    return node;
+};
+xray.insertedge = function (run, nodea, nodeb) {
+    local edge;
+    edge = dotty.insertedge (run.gt, nodea, null, nodeb, null, [
+        'color' = xray.coldcolor;
+    ]);
+    edge.maxcalls = 0;
+    return edge;
+};
+xray.clusternodes = function (run) {
+    local nid, node, cluster, cname;
+    for (nid in run.gt.graph.nodes) {
+        node = run.gt.graph.nodes[nid];
+        cname = concat ('cluster_', node.attr.file);
+        if (~(cluster = run.gt.graph.graphs[run.gt.graph.graphdict[cname]])) {
+            cluster = dot.insertsgraph (run.gt.graph, cname, null);
+            cluster.graphattr.label = node.attr.file;
+            dotty.unpacksgraphattr (run.gt, cluster);
+        }
+        cluster.nodes[node.nid] = node;
+    }
+    dotty.layoutgraph (run.gt);
+};
+xray.colorgraph = function (run) {
+    local nid, node, eid, edge;
+    for (nid in run.gt.graph.nodes) {
+        node = run.gt.graph.nodes[nid];
+        if (node.onstack)
+            node.attr.color = xray.onstackcolor;
+        else if (node.maxcalls >= run.maxcoldcalls)
+            node.attr.color = xray.hotcolor;
+        else if (node.maxcalls > 0)
+            node.attr.color = xray.calledcolor;
+        else
+            node.attr.color = xray.coldcolor;
+        node.color = run.colors[node.attr.color];
+        node.attr.fontcolor = xray.fontcolors[node.attr.color];
+        node.fontcolor = run.colors[node.attr.fontcolor];
+    }
+    for (eid in run.gt.graph.edges) {
+        edge = run.gt.graph.edges[eid];
+        if (edge.onstack)
+            edge.attr.color = xray.onstackcolor;
+        else if (edge.maxcalls >= run.maxcoldcalls)
+            edge.attr.color = xray.hotcolor;
+        else if (edge.maxcalls > 0)
+            edge.attr.color = xray.calledcolor;
+        else
+            edge.attr.color = xray.coldcolor;
+        edge.color = run.colors[edge.attr.color];
+    }
+    dotty.drawgraph (run.gt.views, run.gt);
+};
+xray.colornode = function (run, node) {
+    local nid;
+    if (node.onstack)
+        node.attr.color = xray.onstackcolor;
+    else if (node.maxcalls >= run.maxcoldcalls)
+        node.attr.color = xray.hotcolor;
+    else if (node.maxcalls > 0)
+        node.attr.color = xray.calledcolor;
+    else
+        node.attr.color = xray.coldcolor;
+    dotty.undrawnode (run.gt.views, node);
+    node.color = run.colors[node.attr.color];
+    node.attr.fontcolor = xray.fontcolors[node.attr.color];
+    node.fontcolor = run.colors[node.attr.fontcolor];
+    dotty.drawnode (run.gt.views, node);
+};
+xray.coloredge = function (run, edge) {
+    local eid;
+    if (edge.onstack)
+        edge.attr.color = xray.onstackcolor;
+    else if (edge.maxcalls >= run.maxcoldcalls)
+        edge.attr.color = xray.hotcolor;
+    else if (edge.maxcalls > 0)
+        edge.attr.color = xray.calledcolor;
+    else
+        edge.attr.color = xray.coldcolor;
+    dotty.undrawedge (run.gt.views, edge);
+    edge.color = run.colors[edge.attr.color];
+    dotty.drawedge (run.gt.views, edge);
+};

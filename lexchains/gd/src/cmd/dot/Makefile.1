@@ -1,0 +1,20 @@
+:PACKAGE:ast
+CCFLAGS = -O
+NAWK=nawk
+
+all : dot libdot.a
+
+libdot.a :: acyclic.c class1.c class2.c rank.c decomp.c mincross.c cluster.c \
+	colxlate.c conc.c emit.c fastgr.c flat.c globals.c gifgen.c hpglgen.c \
+	input.c ismapgen.c mifgen.c ns.c output.c position.c postproc.c psgen.c \
+	routespl.c shapes.c splines.c timing.c utils.c
+
+dot ::  dot.c -ldot -lgraph -ldict -lgd +last -lm 
+
+colortbl.h	: color_names awk/colortbl.awk
+	sed "s/_//g" color_names | sort > color_lib
+	$(NAWK) -f awk/colortbl.awk color_lib > colortbl.h
+	rm color_lib
+
+ps.h : ps.lib
+	$(NAWK) -f awk/stringize.awk ps.lib > ps.h

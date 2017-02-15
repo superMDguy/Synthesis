@@ -1,0 +1,2 @@
+time perl $1.cmp < $2 > out.$1.$2
+more out.$1.$2

@@ -1,0 +1,232 @@
+#!/usr/bin/perl
+
+#
+# Tokenization script:
+#  seperates punctuation marks from words.
+#
+#
+#  (C)  Ido Dagan and Yuval Krymolowski, IR lab, Bar Ilan University,
+#       Ramat Gan, Israel
+#
+
+#  tokenize input-file [output-file] (default is stdout)
+#
+# This secript checks for sgml <p> mark in the beginning of the input file.
+#    If it is found, the pearl assumes that the file is an output of sgmlsent
+#    and :
+#      - removes the first and last tokens from each line (<s> and </s>)
+#      - does not handle lines outside <p>-</p> block 
+#      - seperates the dot from the end of the last word in the sentence. 
+#
+#
+# Token types:
+#
+#  a) A word is a sequence beginning with a letter and containing only
+#     letters or dots
+#  b) A word boundary is any non-blank character which may follow a word
+#  c) Any other thing
+#
+# Note: A dot in the end of a word is not seperated, UNLESS the file is
+#       known to contain a sentence in a line (output_of_sgmlsent) - in
+#       which case the dot at the end of the last word is seperated.
+#
+#       Contractions such as they'll are seperated to they + 'll as
+#       Brill's tagger expects.
+#
+#       The ending n't is converted to "not" - haven't -> have + not
+#
+
+#
+# Some general definitions and pointers to invoked commands
+#
+
+$curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+unshift(@INC,$curdir);
+require "misc-defs" ;
+
+#
+# for It's, they're, ...
+#
+%contract =
+ ( "s", 1,
+   "d", 1,
+   "m", 1,
+   "ll", 1,
+   "re", 1,
+   "ve", 1
+   ) ;
+
+
+#
+# Tokenization is done after sentencing because
+# it may corrupt sentencing input.
+#
+
+#
+#  general token setting
+#
+
+# characters which may follow a word
+$following_word = '[?.,;()\'"`+]|-' ;
+
+# $non_alpha_non_space = '(?:(?![A-Z|a-z|\s]).)' ;
+$word_bound_pat = "(?:$following_word)" ;
+
+# punctuations should appear seperated (except dot or comma before alphanum)
+$non_bound_non_space = "(?:(?!$following_word|\\s).)" ;
+
+# word may contain dots as e.g. etc. , but must begin with a letter  
+$word_pat = "[A-Z|a-z][.|A-Z|a-z]*(?:(?=$following_word|\\s))" ; 
+
+# non-word is composed of character which are not letters
+$non_word_pat = "(?:(?:$non_bound_non_space|(?:[.,]))+)" ; 
+
+$tok_pat = "((?:$word_pat)|(?:$non_word_pat)|(?:$word_bound_pat))\\s*" ;
+#
+# openning the files
+#
+
+$usage = <<"EOM" ;
+This pearl performs tokenization 
+
+Usage:
+ tokenize input-file [output-file] (default is stdout)    
+
+EOM
+
+($infile, $outfile) = @ARGV ;
+
+if (! $infile)
+{ die "$usage" ;
+  }
+
+open (INPUT, '<'.$infile)
+    || die "Could not open input file $infile\n" ;
+
+# direct output to stdout if no file name was given
+if (! $outfile)
+ { $outfile = "-" ;
+   }
+open (OUTPUT, '>'.$outfile) 
+     || die "Output file $outfile could not be opened\n" ;
+
+# The header/footer for sgmlsent (<p> is the default)
+$sgml_type = 'p' ;
+$start_pat = '<'.$sgml_type.'>' ;
+$end_pat = '</'.$sgml_type.'>' ;
+
+
+# get the first input line
+$first_line = <INPUT> ;
+
+#
+# if the file is an output of sgmlsent, we should
+# ignore the first and last lines, which contain
+# sgml tokens <p> and </p> ($start_pat and $end_pat)
+#
+# In this case we set up a flag which ignores the
+# sentance marks <s> and </s> in each line
+#
+if ($first_line =~ /^$start_pat/)
+  { $output_of_sgmlsent = $TRUE ;
+    } 
+ else
+  { $output_of_sgmlsent = $FALSE ;
+    }
+
+# re-open the input file to re-read the first line
+# (also if it is output of sgmlsent because it may begin with <p></p>
+#  if the first line in the original text is a comment)
+close (INPUT) ;
+open (INPUT, '<'.$infile)
+	 || die "Could not open input file $infile\n" ;
+  
+#
+# read input lines, the 'while' condition is good
+# also if the file is not bounded by sgml marks
+#
+while ($line = <INPUT>)
+ {
+     
+  # a check whether the file has sgml marks was done before.
+  # In this case - do not handle lines outside <p>-</p> boundaries
+  if ($output_of_sgmlsent)
+   { if ($line =~ /$end_pat$/)
+      { ignore:
+	while ($line = <INPUT>)
+	 { if ($line =~ /^$start_pat/)
+	    { last ignore ;
+	      }
+	   print OUTPUT $line ;
+           }
+	$line = <INPUT> ;
+        }
+     }
+   # cut trailing blanks
+   $line =~ s/\s*$//g ; 
+
+   # Seperate ... sequences from words (e.g., take... away -> take ... away).
+   # Only single dots are taken as part of a word ("Inc.", "B.Sc").
+   $line =~ s/(\.\.+)/\ \1\ /g ; 
+
+   # setting the array of tokens
+   @tokens = ($line =~ /$tok_pat/g) ;
+
+   # a check whether the file has sgml marks was done before
+   if ($output_of_sgmlsent)
+    { # first and last tokens are <s> and </s> - delete them
+      shift (@tokens) ;
+      splice (@tokens, $#tokens, 1) ;
+      }
+   
+   for ($i=0; $i <= $#tokens; $i=$i+1)
+   { #debug print " : $tokens[$i]" ;
+     if ($tokens[$i] eq "\'")
+      {  #
+         # they ' ll -> they 'll (join ' to contraction)
+         # 
+         if ($contract{$tokens[$i+1]} == 1)
+	  { $tokens[$i] = $tokens[$i].$tokens[$i+1] ;
+	    $tokens[$i+1] = "" ;
+	    }
+         }
+      #
+      # haven ' t -> have not
+      #
+      if (($tokens[$i] =~ /n$/) &&
+          ($tokens[$i+1] eq "\'") &&  
+           ($tokens[$i+2] eq "t"))
+       { chop($tokens[$i]) ;
+         $tokens[$i+1] = "not" ;
+	 $tokens[$i+2] = "" ;
+	 }
+      }    
+
+   #
+   # A dot is allowed within a word.
+   # If the file is an output of sgmlsent, a dot in the end
+   # of the last word is a full stop and should be seperated.
+   #
+   if ($output_of_sgmlsent)
+    { $last = $tokens[$#tokens] ;
+      if ($last =~ /$word_pat\.$/)
+       { $lastchar = chop($last) ;
+         $tokens[$#tokens] = $last." $lastchar" ;
+         }
+      }
+  
+   print OUTPUT join(' ',@tokens,"\n") ;
+  
+   }   # closes the loop on input lines
+ 
+close(INPUT) ;
+close(OUTPUT) || die "Could not close output file $outfile" ;
+
+#if ($outfile ne "-")
+# { if ($output_of_sgmlsent)
+#     { print STDERR "Message: Sentenced and tokenized data is in $outfile\n" ;
+#       }
+#    else
+#     { print STDERR "Message: Tokenized data is in $outfile\n" ;
+#       }
+#   }

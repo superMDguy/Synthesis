@@ -1,0 +1,37 @@
+#
+# CIAO - text views
+#
+# Implements the presentation of query results as text
+#
+ciao.tv.init = function () {
+};
+ciao.tv.doquery = function (cmd) {
+    local fp, s;
+    if (~(ciao.tv.mcanvas >= 0)) {
+        ciao.tv.mview = createwidget (-1, [
+            'origin' = ['x' = 0; 'y' = 0;];
+            'size' = ['x' = 800; 'y' = 404;];
+            'type' = 'view';
+            'name' = 'CIAO text view';
+        ]);
+        ciao.tv.mcanvas = createwidget (ciao.tv.mview, [
+            'size' = ['x' = 800; 'y' = 400;];
+            'type' = 'text';
+            'mode' = 'oneline';
+        ]);
+    } else
+        setwidgetattr (ciao.tv.mview, ['zorder' = 'top';]);
+    ciao.tv.displaymessage ("");
+    ciao.tv.displaymessage (concat ('command: ', cmd));
+    if ((fp = openio ('pipe', 'ksh', 'r',
+            concat ("%e ", cmd))) == -1) {
+        echo ('cannot run command: ', s);
+        return;
+    }
+    while ((s = readline (fp)))
+        ciao.tv.displaymessage (s);
+    closeio (fp);
+};
+ciao.tv.displaymessage = function (s) {
+    setwidgetattr (ciao.tv.mcanvas, ['appendtext' = s;]);
+};

@@ -1,0 +1,57 @@
+WELCOME!
+This directory contains source code for dot and related programs. 
+
+
+ABANDON ALL HOPE!
+This source won't compile out of the box on a new architecture.
+We distribute this code for the benefit of the research community,
+but cannot afford much time to answer questions about porting
+difficulties.  If you can't live with this, don't even go on.
+
+
+DIRECTIONS
+Edit Config.mk to select your ARCH (machine architecture) and
+PREFIX (root of the installation area).
+
+Check settings in makearch/$(ARCH).  Note here that LD is
+the command to generate shared libs; LDFLAGS are passed on
+the CC command line to generated executables.
+
+ARCH can be one of:
+	sgi.mips2	Silicon Graphics Irix 5 (MIPS)
+	sun4		Sun SunOS 4 (SPARC)
+	sol.sun4	Sun Solaris 2+ (SPARC)
+	hp.pa		HP-UX (PA-RISC)
+	linux.i386	Linux (x86) 
+	osf.alpha	DEC OSF/1 3.0 (Alpha)
+(or make a new one if necessary.)
+
+To install everything
+	make install
+
+To clean up afterward
+	make clean
+
+
+COMPILING WITH NMAKE
+nmake is the software configuration management utility described
+in the Practical Reusable Unix Software book.  nmake Makefiles are
+also provided here; they probably need fixing up in src/cmd/lefty
+and src/cmd/tcldot to point to your X11 includes.
+export INSTALLROOT=the directory where include/, lib/, and bin/ will be.
+export ARCH=one of the choices above.
+To compile and install everything
+	nmake recurse install
+
+To clean up everything
+	nmake recurse clean
+
+NOTES
+	src/cmd/lefty
+	    gcc seems better than cc here (e.g. provides stdarg.h for SunOS).
+	    I'll be amazed if anyone else compiles this on HPUX.
+	    We had to port major chunks of MIT X11 (libXaw and libXmu).
+
+	src/cmd/tcldot
+	    Requires ANSI C.
+	    Requires prebuilt tcl 7.3 or 7.4

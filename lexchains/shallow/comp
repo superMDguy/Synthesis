@@ -1,0 +1,331 @@
+#!/usr/local/bin/perl5
+
+unshift(@INC,"/u/ir3/yuvalk/sg") ;
+require "match.sub" ;
+
+sub write_arr
+ { local(@lines) = @_ ;
+   local($line) ;
+
+   foreach $line (@lines)
+    { print COMP $line ;
+      }
+   }
+
+sub next_pair
+ { local(*pair) = @_ ;
+
+   local($num) = $pair ;
+   $num =~ tr/a-j/0-9/ ;
+   $num = $num+1 ;
+   ($pair = $num) =~ tr/0-9/a-j/ ;
+   }
+
+$TRUE = 1 ;
+$FALSE = 0 ;
+
+$equ_add_mark = ':=' ;
+$equ_no_mark  = '=' ;
+$OVERLAP_STR = 'OVERLAP' ;
+
+$rule_file = $ARGV[0] || "rules" ; 
+
+open (RULE, "<$rule_file") ;
+
+open (COMP, ">$rule_file.cmp") ;
+
+$DEFAULTDIR = '.' ;
+
+$skel_dir = $ENV{"SKEL_DIR"} || $DEFAULTDIR ;
+
+open (BEGINNING, "<$skel_dir/begin.skl") || die "Could not open $skel_dir/begin.skl\n" ;
+@beginning = <BEGINNING> ;
+close (BEGINNING) ;
+
+open (SENT_BEGIN, "<$skel_dir/sentbeg.skl") || die "Could not open $skel_dir/sentbeg.skl\n" ;
+@sent_begin = <SENT_BEGIN> ;
+close (SENT_BEGIN) ;
+
+open (SENT_END, "<$skel_dir/sentend.skl") || die "Could not open $skel_dir/sentend.skl\n" ;
+@sent_end = <SENT_END> ;
+close (SENT_END) ;
+
+open (RULE_SKEL, "<$skel_dir/rule.skl") || die "Could not open $skel_dir/rule.skl\n" ;
+@rule_skel = <RULE_SKEL> ;
+close (RULE_SKEL) ;
+
+@empty = () ;
+
+write_arr(@beginning) ;
+write_arr(@sent_begin) ;
+
+$append = $FALSE ;
+
+$mark_pair = 'ba' ;
+$any_heads_pat = '(?:<<[^/][^>]*>>)*' ;
+$any_tails_pat = '(?:<</[^>]+>>)*' ;
+
+READ_RULE:
+while (<RULE>)
+{ $in_line = $_ ;
+  if ( chop NE '\n' )   # cut the newline at the end, the last line
+   { $_ = $in_line ;      # does not end with a newline.
+     }
+
+  s/#.*$// ; # get rid of comments (everything after #)
+  
+  # cut trailing blanks
+  s/\s*$// ;
+ 
+  # handle continuation lines (see the following if)
+  if ($append)
+    { $line = $line . $_ ;
+      }
+   else
+    { $line = $_ ;
+      }
+
+  # mark the next line as a continuation line if the current line ends with a backslash
+  if (/\\$/)
+    { chop ($line) ;
+      $append = $TRUE ;
+      next READ_RULE ;
+      }
+   else
+    { $append = $FALSE ;
+      }
+   
+  $orig_rule = $line ;
+
+#  
+# All the parenthesis in the rule are converted to the kind which does not
+# set tne $n variables after pattern match (PERL 5). 'Usual' parenthesis
+# appear when referring to sub-rules or creating a feature of a rule
+# (e.g., head of a NP). They are inserted automatically.
+#
+  
+  $line =~ s/\(/(?:/g ;
+
+#
+# Every word in the input sentence is attached with a number, e.g., {go&12/
+# (done in @sent_begin). Here we add the pattern -\d+ to words explicitly
+# specified in the rule.
+#                
+  $line =~ s!({.+[^\^])/!$1&\\d+/!g ;  # e.g.,  {out/
+ 
+#  print "Handling : $orig_rule\n" ; # debug
+
+#  put all the information before OVERLAP within brackets, so it can
+#  be identified during matching and skipped.
+		 
+  $overlap = $FALSE ;
+
+  $over_pos = index($line, $OVERLAP_STR) ;
+
+  if ($over_pos >= 0)
+   { $overlap = $TRUE ;
+     $line =~ /=(.+)$OVERLAP_STR/ ;
+     $line = $` . '= (' . $1 . ') ' . $' ;  
+     }
+#d   print  'line=',$line,"\n" ; #DBG
+
+#
+# Get the properties of the rule, they select lines from the skeleton
+# marked with the similar property. For example: DBG:... will cause all
+# the skeleton lines beginning with DBG: to be included for this rule.           
+#                
+  %rule_props = () ;
+
+  $rule_propnum = ($line =~ /^([-_A-Z\d]+)(?:,([-_A-Z\d]+))*:/) ;
+  @rule_proplist = split ('[,:]', $&) if ($rule_propnum > 0) ;
+		 
+  if ($rule_propnum > 0)
+   { foreach $p (@rule_proplist)
+     { $rule_props{$p} = 1 ; 
+	}
+     $line = $' ;
+     }
+		   
+  extract_heads (*line, *heads) ;
+#d     print  'line=',$line,"\n" ;  #DBG
+  $_ = $line ;
+      
+  @tokens = split ;  
+  if ($#tokens < 0)   # an empty or a comment line
+   { next READ_RULE ;
+     }
+
+  # The format of a line is : name {= , := } rule
+  $target = $tokens[0] ;
+  $equate = $tokens[1] ;
+
+  # in the output line, the tokens of the rule should not be seperated by blanks
+  # but be concatenated
+  splice (@tokens, 0, 2) ;
+
+  foreach $tok (@tokens)
+   { if ($tok =~ /^[^\$]/)
+      { $tok = "\'".$tok."\'" ;
+	}
+     }
+  $rule = join('.', @tokens) ;
+#d     print  'rule=',$rule,"\n" ;  #DBG 
+  $evaluated_rule = eval($rule) ; print $@ if ($@) ;
+
+  # add peranthesis so future rules may refer to it as one unit          
+  $evaluated_rule = '(?:'.$evaluated_rule.')' ;
+		 
+  enumerate_ref (*evaluated_rule, *refs) ;
+  enumerate_heads (*evaluated_rule, *head_refs) ;
+
+  *rep_skeleton = *rule_skel ;
+		 
+  if ($equate eq $equ_add_mark)
+    { if ($overlap)
+	{ $rule_props{OVERLAP} = 1 ;
+	  }
+       else
+	{ $rule_props{"REP"} = 1 ;
+	  &next_pair(*mark_pair) ;
+	  $mark = $mark_pair ;
+	  }
+      }
+   else
+    { if ($overlap)
+	{ $rule_props{"OVERLAP"} = 1 ;
+	  }
+#       elsif (($#heads >= 0) || ($#refs >= 0) || ($rule_propnum > 0))
+       elsif ($rule_propnum > 0)
+	{ $rule_props{"NO-REP"} = 1 ;
+	  }
+       else
+	{ *rep_skeleton = *empty ;
+	  }     
+      }
+      
+  READ_SKELETON:           
+  foreach $s (@rep_skeleton)
+   { $skel_line = $s ;
+     
+     @line_prop = ($skel_line =~ /^([-_A-Z\d]+)(?:,([-_A-Z\d]+))*:/) ;
+
+     if ($#line_prop >= 0)
+      { $prop_found = $FALSE ;
+	foreach $p (@line_prop)
+	 { if ($rule_props{$p})
+	    { $skel_line = $' ;
+	      $prop_found = $TRUE ;
+	      last ;
+	      }
+	   }
+	if (! $prop_found)
+	  { next READ_SKELETON ;
+	    }
+	}
+
+     if ($skel_line =~ /^\*init-feat/) 
+      { if (($#heads >= 0) || ($#refs >= 0))
+	 { print COMP '$feat_vec_name = "feats_" . $tar_num ;', "\n" ;
+	   print COMP 'eval ("%$feat_vec_name  = ()") ;', "\n" ;
+	   print COMP '*feat_vec = eval ("*$feat_vec_name") ;', "\n" ;     
+	   }
+	next READ_SKELETON ;
+	}
+
+     if ($skel_line =~ /^\*save/)
+      { 
+	if ($#heads >= 0)
+	 { print COMP 'eval ("%$feat_vec_name  = (', "\n" ;
+	   $n_head = 0 ;
+	   foreach $h (@heads)
+	    { print COMP '\\"'. $h .'\\", \\$' . $head_refs[$n_head] . ", \n" ; #'
+	      $n_head = $n_head+1 ;
+	      }
+	   print COMP "  )\") ; \n" ;
+	   }
+	
+	if ($#refs >= 0)
+	 { $n_ref = 0 ;
+	   foreach $ref (@refs)
+	    { print COMP 'if ($' , $ref , ") {\n" ; #'
+	      print COMP '$ref_feat_vec_name = "feats_$' . $ref . '" ;' . "\n" ; #"   
+	      print COMP '*ref_feat = eval("*$ref_feat_vec_name") ;', "\n" ; 
+	      print COMP 'foreach $feat (keys %ref_feat)',"\n" ;
+	      print COMP ' { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;', "\n" ;
+#             print COMP ' { eval ("\$$feat_name {\"".$feat."\"} .= \"   \" . \$ref_feat{\"".$feat."\"}") ;', "\n" ;
+	      print COMP '   }',"\n" ;
+	      print COMP '   } # $', $ref,"\n" ; #'
+	      $n_ref = $n_ref+1 ;
+	      }
+	   }
+	next READ_SKELETON ;
+	}
+	
+     $line_for_eval = $skel_line ;
+	
+     $e = eval($line_for_eval) ;
+     if ($@) { print $@."\n line=".$s."\n rule=" .
+		$orig_rule."\n line_for_eval=". $line_for_eval . "\n" ; die ;} ;
+     print COMP $e."\n" if ($e) ;
+	
+     }  # closes READ_SKELETON
+  
+		 
+  if (($equate eq $equ_add_mark) && ( ! $overlap))
+   { 
+#
+#    Replace further occurences of the target only by surrounding marks
+#    in a way that will match only segments with the same id:
+#    e.g., $noun will be replaces by a pattern looking for 
+#     <<nouni>> ... <</nouni>> for the same id 'i' in both sides. 
+#
+#    The subroutine enumerate_ref uses the \1 here for identifying a reference
+#    and giving it the correct number, because a pattern may include multiple
+#    such references.
+#
+#    This replacement takes place only if the rule does not contain OVERLAP (even if := was used)
+#    because overlapped markers may cause confusion
+#
+#dbg   print "mark=$mark\n" ;
+    $target_eval = '$' . $target. ' = ' . ' \'(?:' . $any_heads_pat . 
+	  '(?:<<(\'. ' . $mark . '.\'\\\\d+)>>\'.' . '\'.+\'.' . '\'<</\\\\1>>)'
+	   . $any_tails_pat .  ')\'' ; # '
+#    print $target_eval . "\n" ;      # debug
+     eval ($target_eval. ' ;') ;
+     if ($@) { print $@."\n  rule=".$orig_rule."\n"; die ;} ;
+     }
+   else
+    {
+#       
+# replacing further occurences of the rule by the evaluated rule, search for the
+# rule's components when referring to $target.
+#
+      # Extend rules which retminate with individual lema markers '}'
+      # to match <</..>> markers following the word.
+      # Similarly, rules which begin with a word marker ({) will
+      # match <<..>> markers preceeding the word.
+      if ($evaluated_rule =~ /}\)$/)
+       { $evaluated_rule = $` . '}' . $any_tails_pat . ')' ;
+#d         print "$target(1)=" , $evaluated_rule , "\n" ;  #dbg
+	 }
+      if ($evaluated_rule =~ /^((?:\(\?:)*){/)
+       { $evaluated_rule = $1 . $any_heads_pat .  '{' . $' ;
+#d         print "$target(2)=" , $evaluated_rule , "\n" ;  #dbg
+	 }
+      $ev_target = '$' . $target . ' = \'' . $evaluated_rule. '\'' ; #'
+#d      print "before eval:", $ev_target, "\n" ;   #dbg
+      $e = eval($ev_target) ;
+      if ($@) { print $@."\n  rule=".$orig_rule, "\n evaluated=\n",
+		$ev_target, "\n"; die ;} ;
+      }
+
+  }  # closes READ_RULE
+
+
+write_arr(@sent_end) ;
+		 
+close (RULE) ;
+close (COMP) ;
+
+
+

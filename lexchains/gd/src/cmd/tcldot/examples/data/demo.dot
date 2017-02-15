@@ -1,0 +1,38 @@
+digraph G {
+  graph [URL="http://www.tbu.att.com/webdot_demo/default.html"]
+  node [URL="/webdot_demo/\N.html", style=filled]
+  edge [URL="\N.html"]
+
+  hi [color=pink]
+  medium [color=lightyellow]
+  lo [color=palegreen]
+
+  hi->medium->lo
+  hi->lo [style=dashed]
+}
+
+//That's it!
+//
+// Here's what we did:
+//
+//   digraph G {           //Start definition of a directed graph named "G"
+//
+//     graph [URL="http... //Set an absolute URL attribute in the graph to 
+//                         //handle mouse clicks that miss anything else
+//
+//     node [URL="http...  //Set a server_relative URL attribute for each node.
+//                         //The "\N" is replaced by the node's name.
+//                         //Also set to fill with color
+//
+//     edge [URL="http...  //Set a directory_relative URL attribute for each 
+//                         //edge. The "\N" is replaced by the edge's name.
+//                         //*** Mosaic doesn't support edge selection
+//
+//     hi [color=pink]     //set node colors
+//     medium [color=...   //
+//     lo [color=pale...   //
+//
+//     hi->medium->lo      //describe the graph
+//     hi->lo [style=...   //
+//
+//   }                     //end

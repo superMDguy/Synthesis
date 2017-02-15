@@ -1,0 +1,17 @@
+
+A/DT/A summary/NN/summary of/IN/of the/DT/the physical/JJ/physical basis/NN/basis of/IN/of quantum/NN/quantum computation/NN/computation appeared/VBD/appear last/JJ/last week/NN/week in/IN/in "/"/" Science/NNP/Science "/"/" magazine/NN/magazine ././.
+
+summary(2)/@n_seq/summary basis(6)/@n_seq/basis quantum(8)-computation(9)/@n_seq/quantum-computation week(12)/@n_seq/week Science(15)/@n_seq/Science magazine(17)/@n_seq/magazine 
+
+?????
+"Science(15)/@n_seq/Science magazine(17)/@n_seq/magazine" must be "Science-magazine/@n_seq/Science-magazine"
+
+________________________________________________________________________________
+It/PRP/It was/VBD/be therefore/RB/therefore a/DT/a welcome/JJ/welcome surprise/NN/surprise when/WRB/when Dr/NNP/Dr Shor/NNP/Shor announced/VBD/announce a/DT/a year/NN/year ago/RB/ago that/IN/that he/PRP/he had/VBD/have invented/VBN/invent a/DT/a quantum/NN/quantum error/NN/error -/:/- correcting/VBG/correct code/NN/code ././.
+
+surprise(6)/@n_seq/surprise Dr(8)-Shor(9)/@n_seq/Dr-Shor year(12)/@n_seq/year quantum(19)-error(20)/@n_seq/quantum-error code(23)/@n_seq/code
+
+
+????
+quantum-error
+________________________________________________________________________________

@@ -1,0 +1,12 @@
+sgmlsent -- a program to do sentence divisions within specified SGML tag pairs.
+
+You should have the files listed in "files".
+Execute "make" to make sgmlsent.
+Then you can run the tests in "tests".
+>From looking at the input and the output you should be able to
+see how it works.
+
+Sorry for the sparse documentation.
+
+	Mark Liberman
+	December, 1992

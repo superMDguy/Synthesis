@@ -1,0 +1,384 @@
+#
+# XRAY main file
+#
+load ('xraydag.lefty');
+load ('xraystack.lefty');
+load ('xraylog.lefty');
+#txtview ('off');
+#
+# the run array holds all the data about graphs and logs
+# it is initialized from the xray shell script
+#
+xray.runarray = [];
+#
+#
+#
+xray.init = function () {
+    xray.coldcolor = 'blue';
+    xray.calledcolor = 'forestgreen';
+    xray.hotcolor = 'red';
+    xray.onstackcolor = 'yellow';
+    xray.fontcolors = [
+        xray.coldcolor = 'white';
+        xray.calledcolor = 'white';
+        xray.hotcolor = 'white';
+        xray.onstackcolor = 'black';
+    ];
+    xray.maxcoldcalls = 3;
+    xray.initdag ();
+    xray.initlog ();
+    xray.initstack ();
+    xray.runn = tablesize (xray.runarray);
+    xray.runi = 0;
+};
+xray.main = function () {
+    xray.nextrun ();
+};
+xray.nextrun = function () {
+    if (xray.runi < xray.runn) {
+        xray.loadrun (xray.runi);
+        xray.runi = xray.runi + 1;
+    }
+};
+xray.loadrun = function (i) {
+    local run, nid, node, eid, edge;
+    run = xray.runarray[i];
+    run.maxcoldcalls = xray.maxcoldcalls;
+    xray.creategraph (run);
+    widgets[run.dcanvas].runi = i;
+    for (nid in run.gt.graph.nodes) {
+        node = run.gt.graph.nodes[nid];
+        run.nodemap[node.attr.file][node.attr.label] = node.nid;
+    }
+    for (eid in run.gt.graph.edges) {
+        edge = run.gt.graph.edges[eid];
+        run.edgemap[edge.tail.nid][edge.head.nid] = eid;
+    }
+    xray.loadlog (run);
+    xray.colorgraph (run);
+    xray.createstack (run, '');
+    widgets[run.scanvas].runi = i;
+};
+xray.unloadrun = function (i) {
+    local run;
+    run = xray.runarray[i];
+    xray.destroygraph (run);
+    xray.destroystack (run);
+    remove ('nodemap', run);
+};
+xray.deletenode = function (run, node) {
+    dotty.removesubtree (run.gt, node);
+    if (xray.adjustlog (run) < run.logi)
+        xray.resetlog (run);
+    xray.resetcallcount (run);
+    xray.remapgraph (run);
+};
+xray.deleteedge = function (run, edge) {
+    dotty.removeedge (run.gt, edge);
+    if (edge.maxcalls > 0) {
+        if (xray.adjustlog (run) < run.logi)
+            xray.resetlog (run);
+        xray.resetcallcount (run);
+        xray.remapgraph (run);
+    }
+};
+xray.deletefilenodes = function (run, node) {
+    dotty.removesubtreesbyattr (run.gt, 'file', node.attr.file);
+    xray.adjustlog (run);
+    xray.resetlog (run);
+    xray.resetcallcount (run);
+    xray.remapgraph (run);
+};
+xray.groupfilenodes = function (run, node) {
+    local gnode;
+    gnode = dotty.groupnodesbyattr (run.gt, 'file', node.attr.file, [
+        'label' = node.attr.file;
+        'file' = node.attr.file;
+    ]);
+    xray.mapgraph (run);
+    xray.grouplogbyfile (run, gnode.attr.file, gnode);
+    xray.resetlog (run);
+    xray.resetcallcount (run);
+};
+xray.removedeadcode = function (run) {
+    local done, nid, eid, node, edge;
+    done = 0;
+    while (~done) {
+        done = 1;
+        for (nid in run.gt.graph.nodes) {
+            node = run.gt.graph.nodes[nid];
+            if (node.maxcalls == 0) {
+                dotty.removesubtree (run.gt, node);
+                done = 0;
+                break;
+            }
+        }
+    }
+    done = 0;
+    while (~done) {
+        done = 1;
+        for (eid in run.gt.graph.edges) {
+            edge = run.gt.graph.edges[eid];
+            if (edge.maxcalls == 0) {
+                dotty.removeedge (run.gt, edge);
+                done = 0;
+                break;
+            }
+        }
+    }
+    xray.adjustlog (run);
+    xray.resetlog (run);
+    xray.resetcallcount (run);
+    xray.remapgraph (run);
+};
+xray.mapgraph = function (run) {
+    local nid, node, eid, edge;
+    run.nodemap = [];
+    for (nid in run.gt.graph.nodes) {
+        node = run.gt.graph.nodes[nid];
+        run.nodemap[node.attr.file][node.attr.label] = node.nid;
+    }
+    run.edgemap = [];
+    for (eid in run.gt.graph.edges) {
+        edge = run.gt.graph.edges[eid];
+        run.edgemap[edge.tail.nid][edge.head.nid] = eid;
+    }
+};
+xray.remapgraph = function (run) {
+    local fid, lid, nid1, nid2, list;
+    for (fid in run.nodemap) {
+        for (lid in run.nodemap[fid])
+            list[fid][lid] = run.nodemap[fid][lid];
+    }
+    for (fid in list) {
+        for (lid in list[fid])
+            if (~run.gt.graph.nodes[list[fid][lid]])
+                remove (lid, run.nodemap[fid]);
+        if (tablesize (run.nodemap[fid]) == 0)
+            remove (fid, run.nodemap);
+    }
+    list = [];
+    for (nid1 in run.edgemap) {
+        for (nid2 in run.edgemap[nid1])
+            list[nid1][nid2] = run.edgemap[nid1][nid2];
+    }
+    for (nid1 in list) {
+        for (nid2 in list[nid1])
+            if (~run.gt.graph.edges[list[nid1][nid2]])
+                remove (nid2, run.edgemap[nid1]);
+        if (tablesize (run.edgemap[nid1]) == 0)
+            remove (nid1, run.edgemap);
+    }
+};
+xray.displaymessage = function (s) {
+    if (~(xray.mcanvas >= 0)) {
+        xray.mview = createwidget (-1, [
+            'origin' = ['x' = 730; 'y' = 250;];
+            'size' = ['x' = 404; 'y' = 204;];
+            'type'='view';
+            'name' = 'XRAY messages';
+        ]);
+        xray.mcanvas = createwidget (xray.mview, [
+            'size' = ['x' = 400; 'y' = 200;];
+            'type'='text'; 'mode' = 'oneline';
+        ]);
+    }
+    setwidgetattr (xray.mcanvas, ['appendtext' = s;]);
+};
+xray.dociaquery = function (obj) {
+    local f, s;
+    if (obj.attr.label == obj.attr.file) {
+        xray.displaymessage (concat ('file: ', obj.attr.label));
+        s = concat ('file ', obj.attr.label);
+    } else {
+        xray.displaymessage (concat ('function: ', obj.attr.label));
+        s = concat ('fu ', obj.attr.label, ' file=', obj.attr.file);
+    }
+    if ((f = openio ('pipe', 'vdef', 'r', concat ('%e ', s))) == -1)
+        return;
+    while ((s = readline (f)))
+        xray.displaymessage (s);
+    closeio (f);
+};
+xray.setmaxcalls = function (run, i) {
+    local s;
+    if (~i) {
+        if (~(s = ask ('give maxcalls')))
+            return;
+        if (~((i = ston (s)) > 0))
+            return;
+    }
+    run.maxcoldcalls = i;
+    xray.colorgraph (run);
+};
+xray.setplaydelay = function (run, i) {
+    local s;
+    if (~i) {
+        if (~(s = ask ('specify delay in secs')))
+            return;
+        if (~((i = ston (s)) > 0))
+            return;
+    }
+    run.playdelay = i;
+};
+#
+# user interface functions
+#
+xray.menu1 = [
+    0 = "do layout";
+    1 = "redraw";
+    2 = "next trace";
+    3 = "play log";
+    4 = "rm dead code";
+    5 = "file clusters";
+    6 = "set maxcalls";
+    7 = "set play delay";
+    8 = "zoom in";
+    9 = "zoom out";
+    10 = "find node";
+    11 = "save graph";
+    12 = "run ciao";
+    13 = "text view";
+    14 = "close";
+];
+xray.domenu1action = function (s, data) {
+    local vt, gt, runi;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    runi = widgets[data.widget].runi;
+    if (s == "do layout")
+        dotty.layoutgraph (gt);
+    else if (s == "redraw")
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (s == "next trace")
+        xray.nextrun ();
+    else if (s == "play log")
+        xray.playfulllog (xray.runarray[runi]);
+    else if (s == "rm dead code")
+        xray.removedeadcode (xray.runarray[runi]);
+    else if (s == "file clusters")
+        xray.clusternodes (xray.runarray[runi]);
+    else if (s == "set maxcalls")
+        xray.setmaxcalls (xray.runarray[runi], null);
+    else if (s == "set play delay")
+        xray.setplaydelay (xray.runarray[runi], null);
+    else if (s == "zoom in")
+        dotty.zoom (vt, 0.5);
+    else if (s == "zoom out")
+        dotty.zoom (vt, 2);
+    else if (s == "find node")
+        dotty.findnode (vt, gt);
+    else if (s == "save graph")
+        dotty.savegraph (gt, null, 'file');
+    else if (s == "run ciao")
+        system (concat ('ciao ', xray.runarray[runi].dag, ' &'));
+    else if (s == "text view") {
+        if (xray.txtview == 'on')
+            xray.txtview = 'off';
+        else
+            xray.txtview = 'on';
+        txtview (xray.txtview);
+    } else if (s == "close")
+        xray.unloadrun (runi);
+};
+xray.menu2 = [
+    0 = "view source";
+    1 = "print attr";
+    2 = "show maxcalls";
+    3 = "delete";
+    4 = "delete by file";
+    5 = "group by file";
+    6 = "play until";
+];
+xray.domenu2action = function (s, data) {
+    local run, aid;
+    run = xray.runarray[widgets[data.widget].runi];
+    if (s == "view source")
+        xray.dociaquery (data.obj);
+    else if (s == "print attr") {
+        if (data.obj.nid >= 0) {
+            xray.displaymessage (concat ('node: ', data.obj.name));
+            for (aid in data.obj.attr)
+                xray.displaymessage (concat (aid, ' = ', data.obj.attr[aid]));
+        }
+    } else if (s == "show maxcalls") {
+        if (data.obj.nid >= 0)
+            xray.displaymessage (concat ('node: ', data.obj.name,
+                    ' count: ', data.obj.maxcalls));
+    } else if (s == "delete") {
+        if (data.obj.eid >= 0)
+            xray.deleteedge (run, data.obj);
+        else
+            xray.deletenode (run, data.obj);
+    } else if (s == "delete by file") {
+        if (data.obj.nid >= 0)
+            xray.deletefilenodes (run, data.obj);
+    } else if (s == "group by file") {
+        if (data.obj.nid >= 0)
+            xray.groupfilenodes (run, data.obj);
+    } else if (s == "play until") {
+        if (data.obj.nid >= 0)
+            xray.playloguntil (run, data.obj);
+    }
+};
+xray.leftdown = function (data) {
+    xray.nextlogentry (xray.runarray[widgets[data.widget].runi]);
+};
+xray.leftmove = function (data) {
+    local run;
+    run = xray.runarray[widgets[data.widget].runi];
+    if (run.continuous & run.logi ~= -1)
+        xray.nextlogentry (xray.runarray[widgets[data.widget].runi]);
+};
+xray.middledown = function (data) {
+    xray.prevlogentry (xray.runarray[widgets[data.widget].runi]);
+};
+xray.middlemove = function (data) {
+    local run;
+    run = xray.runarray[widgets[data.widget].runi];
+    if (run.continuous & run.logi ~= -1)
+        xray.prevlogentry (xray.runarray[widgets[data.widget].runi]);
+};
+xray.rightdown = function (data) {
+    local i;
+    if (data.obj) {
+        if ((i = displaymenu (data.widget, xray.menu2)) >= 0)
+            xray.domenu2action (xray.menu2[i], data);
+    } else {
+        if ((i = displaymenu (data.widget, xray.menu1)) >= 0)
+            xray.domenu1action (xray.menu1[i], data);
+    }
+};
+xray.keyup = function (data) {
+    local vt, gt, run;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    run = xray.runarray[widgets[data.widget].runi];
+    if (data.key == 'l')
+        dotty.layoutgraph (gt);
+    else if (data.key == 'Z')
+        xray.zoom (vt, 0.9);
+    else if (data.key == 'z')
+        xray.zoom (vt, 1.1);
+    else if (data.key == ' ')
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (data.key == 'm') {
+        if (run.continuous)
+            run.continuous = 0;
+        else
+            run.continuous = 1;
+    } else if (data.obj) {
+        if (data.key == 'd') {
+            if (data.obj.eid >= 0)
+                xray.deleteedge (run, data.obj);
+            else
+                xray.deletenode (run, data.obj);
+        } else if (data.key == 'D') {
+            if (data.obj.nid >= 0)
+                xray.deletefilenodes (run, data.obj);
+        } else if (data.key == 'g') {
+            if (data.obj.nid >= 0)
+                xray.groupfilenodes (run, data.obj);
+        }
+    }
+};

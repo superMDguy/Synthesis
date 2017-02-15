@@ -8,16 +8,20 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.text_rank import TextRankSummarizer as Summarizer
+from sumy.summarizers.edmundson import EdmundsonSummarizer as Summarizer
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
+from nltk.tokenize import sent_tokenize
 
 from search import getArticles
 
+def clean(string):
+    return ' '.join(string.split())
+
 class Subject:
-    def __init__(self, subjectTitle, length=50):
+    def __init__(self, subjectTitle, summaryLength=100):
         self.subjectTitle = subjectTitle
-        self.length = length
+        self.summaryLength = summaryLength
 
         self.wikiPage = wikipedia.page(wikipedia.search(self.subjectTitle)[0])
         self.sections = self.getSections()
@@ -40,16 +44,16 @@ class Subject:
             except ValueError: #On last heading, no headings follow it
                 end = -1
 
-            sectionContent = re.sub('==* .* ==*', '', content[start:end]) #Remove all subheadings
-            sectionsDict[section] = sectionContent.split("\n\n") #Split on paragraphs
+            sectionContent = clean(re.sub('==* .* ==*', '', content[start:end])) #Remove all subheadings
+            sectionsDict[section] = sent_tokenize(sectionContent) #Split into sentences
         return sectionsDict
 
     def train(self):
         data = []
         target = []
 
-        for title, paragraphs in self.sections.items():
-            for sentence in paragraphs:
+        for title, sentences in self.sections.items():
+            for sentence in sentences:
                 data.append(str(sentence))
                 target.append(title)
 
@@ -62,15 +66,15 @@ class Subject:
 
     def classifySources(self):
         for doc in self.sources:
-            paragraphs = doc['text'].split("\n\n")
-            categories = self.classifier.predict(paragraphs)
-            for i in range(len(paragraphs)):
-                self.sections[categories[i]].append(paragraphs[i]) #Update the sections dictionary to add the new paragraph
+            sentences = doc['text']
+            categories = self.classifier.predict(sentences)
+            for i in range(len(sentences)):
+                self.sections[categories[i]].append(sentences[i]) #Update the sections dictionary to add the new sentence
 
     def summarizeSections(self):
-        summaryLength = round(self.length/len(self.sections))
-        for section, paragraphs in self.sections.items():
-            doc = '\n\n'.join(paragraphs)
+        summaryLength = round((len(self.sections)/self.getTotalLength())*self.summaryLength) #Set summary length of section to be proportional to complete length of section
+        for section, sentences in self.sections.items():
+            doc = '\n\n'.join(sentences)
             parser = PlaintextParser.from_string(doc, Tokenizer('english'))
             stemmer = Stemmer('english')
 
@@ -86,9 +90,15 @@ class Subject:
                 return '[source]({0})'.format(source['url'])
         return '[source]({0})'.format(self.wikiPage.url) #THe wikipedia page isn't included with the rest of the sources.
 
+    def getTotalLength(self):
+        total = 0
+        for section in self.sections:
+            total += len(section)
+        return total
+
     def __str__(self):
         '''Outputs final document as markdown'''
-        out = "# " + self.subjectTitle.title()
+        out = "# " + self.wikiPage.title
         for section,sentences in self.sections.items():
             out += "\n\n## " + section + "\n"
             for sentence in sentences:

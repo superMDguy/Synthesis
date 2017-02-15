@@ -1,0 +1,101 @@
+
+input sentence: OPTICS/NNP/optic A/DT/A Discerning/VBG/discern Eye/NNP/Eye In/IN/In the/DT/the James/NNP/James Bond/NNP/Bond movie/NN/movie ,/,/, "/"/" Never/RB/Never Say/VB/Say Never/RB/Never Again/RB/Again ,/,/, "/"/" a/DT/a camera/NN/camera zooms/VBZ/zoom up_to/VBG/up_to a/DT/a character/NN/character to/TO/to identify/VB/identify him/PRP/him by/IN/by the/DT/the unique/JJ/unique appearance/NN/appearance of/IN/of his/PRP$/his eye/NN/eye ././.
+
+OPTICS(1)/@n_seq/optic
+Eye(4)/@n_seq/Eye
+James(7)-Bond(8)-movie(9)/@n_seq/James-Bond-movie
+camera(19)/@n_seq/camera
+character(23)/@n_seq/character
+appearance(30)/@n_seq/appearance
+eye(33)/@n_seq/eye
+Bond(8)-movie(9)/@n_n_a/Bond-movie
+appearance(30)-of(31)-eye(33)/@n_prep_n/appearance-of-eye
+unique(29)-appearance(30)/@a_n_b/unique-appearance
+camera(19)-zooms(20)/@s_v_a/camera-zoom
+identify(25)/@v_o_a/identify
+Discerning(3)/@v_o_d/discern
+up_to(21)-character(23)/@v_o_d/up_to-character
+OPTICS(1)/@pn_unt/optic
+OPTICS(1)/@pn_unt/optic
+Eye(4)/@pn_unt/Eye
+Eye(4)/@pn_unt/Eye
+James(7)-Bond(8)/@pn_unt/James-Bond
+Bond(8)/@pn_unt/Bond 
+
+input sentence: At/IN/At that/DT/that time/NN/time ,/,/, there/EX/there was/VBD/be no/DT/no device/NN/device that/WDT/that could/MD/could accomplish/VB/accomplish such_a/NN/such_a thing/NN/thing ././.
+
+time(3)/@n_seq/time
+device(8)/@n_seq/device
+such_a(12)-thing(13)/@n_seq/such_a-thing
+such_a(12)-thing(13)/@n_n_a/such_a-thing
+was(6)-device(8)/@s_v_b/be-device
+was(6)-device(8)/@v_o_a/be-device
+accomplish(11)-thing(13)/@v_o_a/accomplish-thing 
+
+input sentence: But/CC/But now/RB/now Sensar/NNP/Sensar ,/,/, a/DT/a subsidiary/NN/subsidiary of/IN/of the/DT/the David/NNP/David Sarnoff/NNP/Sarnoff Research/NNP/Research Center/NNP/Center ,/,/, has/VBZ/have announced/VBN/announce a/DT/a $25.8/CD/$25.8 -/:/- million/CD/million agreement/NN/agreement with/IN/with OKI/NNP/OKI Electric/NNP/Electric Industry/NNP/Industry Ltd./NNP/Ltd. in/IN/in Tokyo/NNP/Tokyo ,/,/, one/CD/one of/IN/of the/DT/the world/NN/world 's/POS/'s leading/VBG/lead suppliers/NNS/supplier of/IN/of automated/VBN/automate teller/NN/teller machines/NNS/machine (/(/( ATMs/NNS/atm )/SYM/) ././.
+
+Sensar(3)/@n_seq/Sensar subsidiary(6)/@n_seq/subsidiary David(9)-Sarnoff(10)-Research(11)-Center(12)/@n_seq/David-Sarnoff-Research-Center agreement(20)/@n_seq/agreement OKI(22)-Electric(23)-Industry(24)-Ltd.(25)/@n_seq/OKI-Electric-Industry-Ltd. Tokyo(27)/@n_seq/Tokyo world(32)/@n_seq/world suppliers(35)/@n_seq/supplier teller(38)-machines(39)/@n_seq/teller-machine ATMs(41)/@n_seq/atm teller(38)-machines(39)/@n_n_a/teller-machine agreement(20)-with(21)/@n_prep_n/agreement-with suppliers(35)-of(36)-machines(39)/@n_prep_n/supplier-of-machine world(32)-suppliers(35)/@n_s_n_c/world-supplier leading(34)-suppliers(35)/@a_n_b/lead-supplier automated(37)-machines(39)/@a_n_b/automate-machine automated(37)-teller(38)/@a_n_ba/automate-teller Sensar(3)/@pn_unt/Sensar Sensar(3)/@pn_unt/Sensar David(9)-Sarnoff(10)-Research(11)-Center(12)/@pn_unt/David-Sarnoff-Research-Center Center(12)/@pn_unt/Center OKI(22)-Electric(23)-Industry(24)-Ltd.(25)/@pn_unt/OKI-Electric-Industry-Ltd. Ltd.(25)/@pn_unt/Ltd. Tokyo(27)/@pn_unt/Tokyo Tokyo(27)/@pn_unt/Tokyo Sensar(3)-subsidiary(6)/@pn_is_n/Sensar-subsidiary 
+
+input sentence: This/DT/This means/VBZ/mean iris/NN/iris recognition/NN/recognition could/MD/could be/VB/be coming/VBG/come to/TO/to an/DT/an ATM/NN/ATM near/IN/near you./CD/you. &/CC/& Unlike/IN/Unlike signature/NN/signature verification/NN/verification ,/,/, voice/NN/voice recognition/NN/recognition or/CC/or fingerprinting/NN/fingerprinting ,/,/, iris/NN/iris recognition/NN/recognition requires/VBZ/require little/JJ/little cooperation/NN/cooperation ././.
+
+iris(3)-recognition(4)/@n_seq/iris-recognition ATM(10)/@n_seq/ATM signature(15)-verification(16)/@n_seq/signature-verification voice(18)-recognition(19)/@n_seq/voice-recognition fingerprinting(21)/@n_seq/fingerprinting iris(23)-recognition(24)/@n_seq/iris-recognition cooperation(27)/@n_seq/cooperation iris(3)-recognition(4)/@n_n_a/iris-recognition signature(15)-verification(16)/@n_n_a/signature-verification voice(18)-recognition(19)/@n_n_a/voice-recognition iris(23)-recognition(24)/@n_n_a/iris-recognition recognition(4)-to(8)-ATM(10)/@n_prep_n/recognition-to-ATM recognition(24)-little(26)/@a_n_a/recognition-little little(26)-cooperation(27)/@a_n_b/little-cooperation recognition(4)-could(5)/@s_v_a/recognition-could recognition(24)-requires(25)/@s_v_a/recognition-require requires(25)-cooperation(27)/@v_o_a/require-cooperation 
+
+input sentence: A/DT/A person/NN/person simply/RB/simply walks/VBZ/walk up_to/VBG/up_to the/DT/the machine/NN/machine and/CC/and inserts/NNS/insert his/PRP$/his or/CC/or her/PRP$/her bankcard/NN/bankcard ././.
+
+person(2)/@n_seq/person machine(7)/@n_seq/machine inserts(9)/@n_seq/insert bankcard(13)/@n_seq/bankcard person(2)-walks(4)/@s_v_a/person-walk up_to(5)-machine(7)/@v_o_d/up_to-machine 
+
+input sentence: Meanwhile/RB/Meanwhile an/DT/an ordinary/JJ/ordinary video/NN/video camera/NN/camera captures/VBZ/capture an/DT/an image/NN/image of/IN/of the/DT/the customer/NN/customer 's/POS/'s right/JJ/right or/CC/or left/VBN/leave eye/NN/eye ././.
+
+video(4)-camera(5)/@n_seq/video-camera image(8)/@n_seq/image customer(11)/@n_seq/customer eye(16)/@n_seq/eye video(4)-camera(5)/@n_n_a/video-camera image(8)-of(9)-eye(16)/@n_prep_n/image-of-eye customer(11)-eye(16)/@n_s_n_c/customer-eye ordinary(3)-camera(5)/@a_n_b/ordinary-camera right(13)-eye(16)/@a_n_b/right-eye left(15)-eye(16)/@a_n_b/leave-eye ordinary(3)-video(4)/@a_n_ba/ordinary-video camera(5)-captures(6)/@s_v_a/camera-capture captures(6)-image(8)/@v_o_a/capture-image 
+
+input sentence: This/DT/This image/NN/image is/VBZ/be converted/VBN/convert into/IN/into a/DT/a digital/JJ/digital code/NN/code ,/,/, which/WDT/which is/VBZ/be compared/VBN/compare with/IN/with one/CD/one already/RB/already stored/VBN/store for/IN/for that/DT/that individual/JJ/individual ././.
+
+image(2)/@n_seq/image code(8)/@n_seq/code image(2)-into(5)-code(8)/@n_prep_n/image-into-code digital(7)-code(8)/@a_n_b/digital-code image(2)-is(3)/@s_v_a/image-be image(2)-converted(4)/@v_o_b/image-convert 
+
+input sentence: If/IN/If the/DT/the system/NN/system perceives/VBZ/perceive a/DT/a match/NN/match ,/,/, the/DT/the customer/NN/customer can/MD/can proceed/VB/proceed ././.
+
+system(3)/@n_seq/system match(6)/@n_seq/match customer(9)/@n_seq/customer system(3)-perceives(4)/@s_v_a/system-perceive customer(9)-proceed(11)/@s_v_a/customer-proceed perceives(4)-match(6)/@v_o_a/perceive-match 
+
+input sentence: The/DT/The process/NN/process takes/VBZ/take about/IN/about five/CD/five seconds./JJ/seconds. &/CC/& Although/IN/Although color/NN/color is/VBZ/be the/DT/the first/JJ/first thing/NN/thing we/PRP/we notice/VBP/notice about/IN/about someone/NN/someone 's/POS/'s eyes/NNS/eye ,/,/, recognition/NN/recognition is/VBZ/be based/VBN/base only/RB/only on/IN/on immutable/JJ/immutable structures/NNS/structure of/IN/of the/DT/the iris/NN/iris ././.
+
+process(2)/@n_seq/process color(9)/@n_seq/color thing(13)/@n_seq/thing someone(17)/@n_seq/someone eyes(19)/@n_seq/eye recognition(21)/@n_seq/recognition structures(27)/@n_seq/structure iris(30)/@n_seq/iris recognition(21)-on(25)-structures(27)/@n_prep_n/recognition-on-structure structures(27)-of(28)-iris(30)/@n_prep_n/structure-of-iris someone(17)-eyes(19)/@n_s_n_c/someone-eye first(12)-thing(13)/@a_n_b/first-thing immutable(26)-structures(27)/@a_n_b/immutable-structure process(2)-takes(3)/@s_v_a/process-take color(9)-is(10)/@s_v_a/color-be notice(15)/@s_v_a/notice recognition(21)-is(22)/@s_v_a/recognition-be is(10)-thing(13)/@v_o_a/be-thing recognition(21)-based(23)/@v_o_b/recognition-base is(10)-thing(13)/@v_o_c/be-thing 
+
+input sentence: These/DT/These include/VBP/include the/DT/the trabecular/JJ/trabecular meshwork/NN/meshwork of/IN/of connective/JJ/connective tissue/NN/tissue ,/,/, collagenous/JJ/collagenous stromal/JJ/stromal fibers/NNS/fiber ,/,/, ciliary/JJ/ciliary processes/NNS/process ,/,/, contraction/NN/contraction furrows/NNS/furrow ,/,/, crypts/NNS/crypt ,/,/, vasculature/NN/vasculature ,/,/, rings/NNS/ring ,/,/, corona/NN/corona ,/,/, coloration/NN/coloration and/CC/and freckles/NNS/freckle ././.
+
+meshwork(5)/@n_seq/meshwork tissue(8)/@n_seq/tissue fibers(12)/@n_seq/fiber processes(15)/@n_seq/process contraction(17)-furrows(18)/@n_seq/contraction-furrow crypts(20)/@n_seq/crypt vasculature(22)/@n_seq/vasculature rings(24)/@n_seq/ring corona(26)/@n_seq/corona coloration(28)/@n_seq/coloration freckles(30)/@n_seq/freckle contraction(17)-furrows(18)/@n_n_a/contraction-furrow meshwork(5)-of(6)-tissue(8)/@n_prep_n/meshwork-of-tissue trabecular(4)-meshwork(5)/@a_n_b/trabecular-meshwork connective(7)-tissue(8)/@a_n_b/connective-tissue collagenous(10)-fibers(12)/@a_n_b/collagenous-fiber stromal(11)-fibers(12)/@a_n_b/stromal-fiber ciliary(14)-processes(15)/@a_n_b/ciliary-process include(2)-meshwork(5)/@v_o_a/include-meshwork 
+
+input sentence: As/IN/As with/IN/with fingerprints/NNS/fingerprint ,/,/, most_of/VBG/most_of these/DT/these characteristics/NNS/characteristic are/VBP/be established/VBN/establish by/IN/by random/JJ/random processes/NNS/process before/IN/before birth/NN/birth ,/,/, says/VBZ/say John/NNP/John G./NNP/G. Daugman/NNP/Daugman of/IN/of the/DT/the Computer/NNP/Computer Laboratory/NNP/Laboratory at/IN/at the/DT/the University/NNP/University of/IN/of Cambridge/NNP/Cambridge ,/,/, who/WP/who developed/VBD/develop the/DT/the algorithm/NN/algorithm behind/IN/behind the/DT/the process/NN/process ././.
+
+fingerprints(3)/@n_seq/fingerprint characteristics(7)/@n_seq/characteristic processes(12)/@n_seq/process birth(14)/@n_seq/birth John(17)-G.(18)-Daugman(19)/@n_seq/John-G.-Daugman Computer(22)-Laboratory(23)/@n_seq/Computer-Laboratory University(26)/@n_seq/University Cambridge(28)/@n_seq/Cambridge algorithm(33)/@n_seq/algorithm process(36)/@n_seq/process characteristics(7)-by(10)-processes(12)/@n_prep_n/characteristic-by-process processes(12)-before(13)-birth(14)/@n_prep_n/process-before-birth algorithm(33)-behind(34)-process(36)/@n_prep_n/algorithm-behind-process random(11)-processes(12)/@a_n_b/random-process characteristics(7)-are(8)/@s_v_a/characteristic-be says(16)/@v_o_a/say developed(31)-algorithm(33)/@v_o_a/develop-algorithm characteristics(7)-established(9)/@v_o_b/characteristic-establish John(17)-G.(18)-Daugman(19)-of(20)-the(21)-Computer(22)-Laboratory(23)/@pn_unt/John-G.-Daugman-of-the-Computer-Laboratory Daugman(19)/@pn_unt/Daugman University(26)-of(27)-Cambridge(28)/@pn_unt/University-of-Cambridge University(26)/@pn_unt/University University(26)-developed(31)/@pn_wh_v/University-develop 
+
+input sentence: The/DT/The iris/NN/iris 's/POS/'s pattern/NN/pattern -/:/- -/:/- which/WDT/which is/VBZ/be different/JJ/different in/IN/in each/DT/each eye/NN/eye -/:/- -/:/- appears/VBZ/appear to/TO/to persist/VB/persist virtually/RB/virtually unchanged/JJ/unchanged throughout/IN/throughout life/NN/life ././.
+
+iris(2)/@n_seq/iris pattern(4)/@n_seq/pattern eye(12)/@n_seq/eye life(21)/@n_seq/life iris(2)-pattern(4)/@n_s_n_c/iris-pattern 
+
+input sentence: Even/RB/Even identical/JJ/identical twins/NNS/twin have/VBP/have unique/JJ/unique iris/NN/iris morphology/NN/morphology ././.
+
+twins(3)/@n_seq/twin iris(6)-morphology(7)/@n_seq/iris-morphology iris(6)-morphology(7)/@n_n_a/iris-morphology twins(3)-unique(5)/@a_n_a/twin-unique identical(2)-twins(3)/@a_n_b/identical-twin unique(5)-morphology(7)/@a_n_b/unique-morphology unique(5)-iris(6)/@a_n_ba/unique-iris twins(3)-have(4)/@s_v_a/twin-have have(4)-morphology(7)/@v_o_a/have-morphology 
+
+input sentence: What/WP/What is/VBZ/be more/JJR/more ,/,/, no/DT/no prosthesis/NN/prosthesis can/MD/can defeat/VB/defeat the/DT/the system/NN/system because/IN/because it/PRP/it detects/VBZ/detect the/DT/the minute/NN/minute pulsations/NNS/pulsation and/CC/and pupil/NN/pupil changes/NNS/change that/WDT/that indicate/VBP/indicate living/VBG/live tissue/NN/tissue ,/,/, contends/VBZ/contend Sensar/NNP/Sensar 's/POS/'s Kevin/NNP/Kevin B./NNP/B. McQuade./NNP/McQuade. &/CC/& *****/ST/*****  0.55565625/CC/0.55565625 
+
+prosthesis(6)/@n_seq/prosthesis system(10)/@n_seq/system minute(15)-pulsations(16)/@n_seq/minute-pulsation pupil(18)-changes(19)/@n_seq/pupil-change tissue(23)/@n_seq/tissue Sensar(26)/@n_seq/Sensar Kevin(28)-B.(29)-McQuade.(30)/@n_seq/Kevin-B.-McQuade. minute(15)-pulsations(16)/@n_n_a/minute-pulsation pupil(18)-changes(19)/@n_n_a/pupil-change living(22)-tissue(23)/@a_n_b/live-tissue prosthesis(6)-defeat(8)/@s_v_a/prosthesis-defeat detects(13)/@s_v_a/detect defeat(8)-system(10)/@v_o_a/defeat-system detects(13)-pulsations(16)/@v_o_a/detect-pulsation indicate(21)-tissue(23)/@v_o_a/indicate-tissue contends(25)/@v_o_a/contend Sensar(26)/@pn_unt/Sensar Sensar(26)/@pn_unt/Sensar Kevin(28)-B.(29)-McQuade.(30)/@pn_unt/Kevin-B.-McQuade. McQuade.(30)/@pn_unt/McQuade. 
+
+input sentence:  Experts/NNS/expert in/IN/in high/JJ/high security/NN/security have/VBP/have shown/VBN/show a/DT/a keen/JJ/keen interest_in/NN/interest_in iris/NN/iris -/:/- based/VBN/base identification:/NNP/identification: McQuade/NNP/McQuade speaks/VBZ/speak in/IN/in hushed/JJ/hushed tones/NNS/tone about/IN/about inquiries/NNS/inquiry from/IN/from the/DT/the Central/NNP/Central Intelligence/NNP/Intelligence Agency/NNP/Agency ././.
+
+Experts(1)/@n_seq/expert security(4)/@n_seq/security interest_in(9)-iris(10)/@n_seq/interest_in-iris identification:(13)-McQuade(14)/@n_seq/identification:-McQuade tones(18)/@n_seq/tone inquiries(20)/@n_seq/inquiry Central(23)-Intelligence(24)-Agency(25)/@n_seq/Central-Intelligence-Agency interest_in(9)-iris(10)/@n_n_a/interest_in-iris Experts(1)-in(2)-security(4)/@n_prep_n/expert-in-security tones(18)-about(19)-inquiries(20)/@n_prep_n/tone-about-inquiry high(3)-security(4)/@a_n_b/high-security keen(8)-iris(10)/@a_n_b/keen-iris hushed(17)-tones(18)/@a_n_b/hushed-tone keen(8)-interest_in(9)/@a_n_ba/keen-interest_in Experts(1)-have(5)/@s_v_a/expert-have speaks(15)/@s_v_a/speak Experts(1)-shown(6)/@v_o_b/expert-show shown(6)-iris(10)/@v_o_d/show-iris identification:(13)-McQuade(14)/@pn_unt/identification:-McQuade McQuade(14)/@pn_unt/McQuade Central(23)-Intelligence(24)-Agency(25)/@pn_unt/Central-Intelligence-Agency Agency(25)/@pn_unt/Agency 
+
+input sentence: Frank/NNP/Frank Bouchier/NNP/Bouchier of/IN/of the/DT/the Security/NNP/Security Systems/NNPS/system and/CC/and Technology/NNP/Technology Center/NNP/Center at/IN/at Sandia/NNP/Sandia National/NNP/National Laboratories/NNPS/laboratory tested/VBN/test an/DT/an early/JJ/early version/NN/version on/IN/on 199/CD/199 eyes/NNS/eye and/CC/and found/VBD/find zero/CD/zero false/JJ/false accepts/VBZ/accept and/CC/and less/JJR/less than/IN/than 5/NN/5 percent/NN/percent false/JJ/false rejects./JJ/rejects. &/CC/& *****/ST/*****  0.06966519/CC/0.06966519 
+
+Frank(1)-Bouchier(2)/@n_seq/Frank-Bouchier Security(5)-Systems(6)/@n_seq/Security-system Technology(8)-Center(9)/@n_seq/Technology-Center Sandia(11)-National(12)-Laboratories(13)/@n_seq/Sandia-National-laboratory version(17)/@n_seq/version eyes(20)/@n_seq/eye 5(29)-percent(30)/@n_seq/5-percent 5(29)-percent(30)/@n_n_a/5-percent version(17)-on(18)-eyes(20)/@n_prep_n/version-on-eye early(16)-version(17)/@a_n_b/early-version tested(14)/@v_o_b/test tested(14)-version(17)/@v_o_d/test-version Frank(1)-Bouchier(2)-of(3)-the(4)-Security(5)-Systems(6)-and(7)-Technology(8)-Center(9)/@pn_unt/Frank-Bouchier-of-the-Security-system-and-Technology-Center Bouchier(2)/@pn_unt/Bouchier Sandia(11)-National(12)-Laboratories(13)/@pn_unt/Sandia-National-laboratory Laboratories(13)/@pn_unt/laboratory 
+
+input sentence:  The/DT/The first/JJ/first ATMs/NNS/atm equipped/VBN/equip with/IN/with iris/NN/iris recognition/NN/recognition are/VBP/be expected/VBN/expect by/IN/by the/DT/the end/NN/end of/IN/of this/DT/this year/NN/year ././.
+
+ATMs(3)/@n_seq/atm iris(6)-recognition(7)/@n_seq/iris-recognition end(12)/@n_seq/end year(15)/@n_seq/year iris(6)-recognition(7)/@n_n_a/iris-recognition ATMs(3)-with(5)-recognition(7)/@n_prep_n/atm-with-recognition recognition(7)-by(10)-end(12)/@n_prep_n/recognition-by-end end(12)-of(13)-year(15)/@n_prep_n/end-of-year first(2)-ATMs(3)/@a_n_b/first-atm recognition(7)-are(8)/@s_v_a/recognition-be ATMs(3)-equipped(4)/@v_o_b/atm-equip recognition(7)-expected(9)/@v_o_b/recognition-expect 
+
+input sentence: And/CC/And if/IN/if the/DT/the technology/NN/technology catches/VBZ/catch on/IN/on ,/,/, it/PRP/it could/MD/could protect/VB/protect users/NNS/user of/IN/of "/"/" smart/JJ/smart "/"/" cards/NNS/card ././.
+
+technology(4)/@n_seq/technology users(11)/@n_seq/user cards(16)/@n_seq/card technology(4)-catches(5)/@s_v_a/technology-catch protect(10)/@s_v_a/protect protect(10)-users(11)/@v_o_a/protect-user 
+
+input sentence: The/DT/The customer/NN/customer 's/POS/'s iris/NN/iris code/NN/code could/MD/could be/VB/be stored/VBN/store on/IN/on the/DT/the card/NN/card ,/,/, and/CC/and the/DT/the merchant/NN/merchant would/MD/would be/VB/be unable/JJ/unable to/TO/to access/VB/access the/DT/the data/NNS/datum unless/IN/unless the/DT/the customer/NN/customer -/:/- -/:/- or/CC/or more/RBR/more precisely/RB/precisely ,/,/, the/DT/the customer/NN/customer 's/POS/'s eye/NN/eye -/:/- -/:/- were/VBD/be present/JJ/present ././.
+
+customer(2)/@n_seq/customer iris(4)-code(5)/@n_seq/iris-code card(11)/@n_seq/card merchant(15)/@n_seq/merchant data(22)/@n_seq/datum customer(25)/@n_seq/customer customer(33)/@n_seq/customer eye(35)/@n_seq/eye iris(4)-code(5)/@n_n_a/iris-code code(5)-on(9)-card(11)/@n_prep_n/code-on-card data(22)-unless(23)-customer(25)/@n_prep_n/datum-unless-customer customer(2)-code(5)/@n_s_n_c/customer-code customer(33)-eye(35)/@n_s_n_c/customer-eye merchant(15)-unable(18)/@a_n_a/merchant-unable code(5)-could(6)/@s_v_a/code-could merchant(15)-be(17)/@s_v_a/merchant-be access(20)-data(22)/@v_o_a/access-datum code(5)-stored(8)/@v_o_b/code-store 

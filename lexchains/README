@@ -1,0 +1,36 @@
+How to install:
+
+* preprocessing stages (tokenization, tagging, shallow parsing)
+  Code is in the directories  sgmlsent, tagger, shallow, tokenizer.
+  These programs were written in PERL by Ido Dagan and Yuval, if you have
+  any problems with that part contact them. It is very important to verify that
+  they are installed properly before you are doing other steps.
+
+* Lisp files + wordnet database are in WN directory. Code is written for
+  Allegro Lisp. You should update pointers to the directories in the file:
+
+  wordnet-database-files.lsp (defparameter +wordnet-database-directory+ #p"/proj/nlp/tools/lexchains/WN/") update +wordnet-database-directory+ to the
+ directory where your WN database will be (currently they are in the same
+ directory as lisp files, so simply write path to the dir where you put all
+ the files).
+
+ make-shallow and make-morph you should update directory for preprocessing
+ tools(tagger and parser)
+
+* to build graphs I am using tcldot (see drawgraph file in WN). You should
+  check tcldot libraries to make this part running. I have some stuff in /gd,
+  but maybe you should reinstall tcldot for your platform. 
+
+
+How to run:
+
+1. run allegro lisp
+2. load wnlisp.lsp
+3. type (doall)            (it's my makefile)
+4. type (run file1)        file1 should be in the subdirectory work (it's one
+                           of the program parameters, you can change it in
+                           file run.lsp by changing outdir).
+5. result is written to the directory work/file1_res
+                           
+You can see some examples of the input format in work directory (for example,
+min). Every paragraph in the input text should be separated with &. 

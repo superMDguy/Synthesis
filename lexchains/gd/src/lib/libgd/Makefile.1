@@ -1,0 +1,16 @@
+:PACKAGE:ast
+
+all : libgd.a /* gddemo giftogd */
+
+libgd.a :: gd.c gdfontl.c gdfonts.c
+
+/*	demo programs */
+/* 
+	gddemo  :: gddemo.c -lgd -lm
+	giftogd :: giftogd.c -lgd -lm
+*/
+
+$(INCLUDEDIR):INSTALLDIR: gd.h gdfonts.h gdfontl.h
+
+clean:
+	rm -f *.[ao] core gddemo giftogd lib*.so.*

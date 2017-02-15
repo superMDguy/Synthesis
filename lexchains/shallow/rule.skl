@@ -1,0 +1,62 @@
+"#"
+"# original rule: " . $orig_rule
+"#"
+'$num = 0 ;'
+REP:'$output = "" ;'
+REP:'$marks{"' . $mark. '"} = ' . $target. ' ;'
+NO-REP,OVERLAP:'$orig_sent = $_ ;'
+DBG: 'print "executing rule: " . ' . "'".  $orig_rule . "'." .'"\n" ;'
+DBG: 'print "input: " , &resolve_marks($_) , "\n" ; '
+DBG: '$tmp_evaluated_rule =  ' . "'". $evaluated_rule . "'". ' ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q(?:' . $anypos  . ')!\$anypos!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q(?:' . $anyhead . ')!\$anyhead!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q(?:' . $anytail . ')!\$anytail!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q(?:' . $anyword . ')!\$anyword!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q' . $anypos  . '!\$anypos!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q' . $anyhead . '!\$anyhead!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q' . $anytail . '!\$anytail!g ; '
+DBG: '$tmp_evaluated_rule =~ s!\Q' . $anyword . '!\$anyword!g ; '
+DBG: 'print "evaluated rule: " , &resolve_marks($tmp_evaluated_rule) , "\n" ;'
+'while (m!'.$evaluated_rule.'!i)'
+'   { $num = $num+1 ;'
+NO-REP,OVERLAP:'     $tar_num = "' .  $target . '" . $num ;'
+REP:'     $tar_num = "' .  $mark . '" . $num ;'
+'     $found = $& ; '
+REP:'     $replace = "<<$tar_num>>$found<</$tar_num>>" ;'
+REP:'     $output = $output. $` . $replace ;'
+NO-REP,REP:'     $newin = $\' ;'
+#
+# The first () pair in the pattern of a rule with overlap is the part
+# which the overlap should skip. 
+# after each replacement, the skipped part is appended to the output
+# and the rest of it retained in $_ for further searches.
+#
+OVERLAP:'     $len = length($1) ;' 
+OVERLAP:'     $newin = substr($found,$len).$\' ;'
+*init-feat
+*save
+DBG: 'print " found: " , &resolve_marks($found) , "\n" ;'
+QUOTE: '$qt = &quote($found, "' . $target . '") ; $all_out .= $qt . " " ;  '
+OUT:'     $found =~ s/<<[^>]+>>//g ;'
+OUT:'     print $tar_num , " : " , $found , "\n" ; '
+OUT,BRIEF:'*out_feat = *feat_vec ;'
+OUT:'foreach $feat (keys %out_feat)'
+OUT:' { $out_feat{"$feat"} =~ s/<<[^>]+>>//g ;'
+OUT:'   print " $feat = $out_feat{\"$feat\"}\n" ;'
+OUT:'   }'
+BRIEF:'%brief_feat = () ;'
+B_MAIN:'$brief_feat{"main"} = $out_feat{"main"} ;'
+B_HEAD:'$brief_feat{"head"} = $out_feat{"head"} ;'
+B_V:'$brief_feat{"v"} = $out_feat{"v"} ;'
+B_V:'$brief_feat{"v1"} = $out_feat{"v1"} ;'
+B_V:'$brief_feat{"v2"} = $out_feat{"v2"} ;'
+B_MOD:'$brief_feat{"mod"} = $out_feat{"mod"} ;'
+B_PREP:'$brief_feat{"prep"} = $out_feat{"prep"} ;'
+B_SUBJ:'$brief_feat{"subj"} = $out_feat{"subj"} ;'
+B_N1:'$brief_feat{"n1"} = $out_feat{"n1"} ;'
+BRIEF:'$b = &brief (*brief_feat, "' . $target . '") ; $all_out .= $b . " " ; '
+'     $_ = $newin ;'
+DBG: 'print " new input: " , &resolve_marks($_) , "\n" ;'
+'     }'
+NO-REP,OVERLAP:'$_ = $orig_sent ;' ;
+REP:'$_ = $output . $_ if ($output) ;' ;

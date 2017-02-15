@@ -1,0 +1,18 @@
+:PACKAGE: ast
+.SOURCE: ../dot
+
+.SOURCE.a : /usr/add-on/tcl/lib    /usr/lib/X11R5 /usr/add-on/ast/lib /usr/add-on/X11/lib
+.SOURCE.h : /usr/add-on/tcl/include	 /usr/include/X11R5 /usr/add-on/X11/include
+
+/* to get shared libs */
+/* CCFLAGS += $(CC.PIC)  */
+
+all : tcldot tkdot
+
+tcldot :: -ltcldot tclAppInit.c -ltcldot -ldot -lgraph -ldict -lgd +ltcl -lm +last
+
+tkdot  :: -ltkdot tkAppInit.c -ltkdot -ldot -lgraph -ldict -lgd +ltk +ltcl +lX11 -lm  +last
+
+tcldot 3.0 :LIBRARY: dotgraph.c gdCmd.c tclrender.c handles.c
+
+tkdot 3.0 :LIBRARY: dotgraph.c gdCmd.c tkgen.c tkrender.c handles.c

@@ -4,6 +4,7 @@ import pdb
 import requests
 from newspaper import Article
 from newspaper.article import ArticleException
+from nltk.tokenize import sent_tokenize
 
 SEARCH_URL = "https://www.googleapis.com/customsearch/v1?key=AIzaSyCmEb62AUBrhDxP_6p76Dp3e1b_jQ4157U&cx=001943372337957644989:uegyifhrqx0&q="
 
@@ -23,14 +24,29 @@ def getArticles(term):
             # pdb.set_trace()
             article.download(html=getHTML(url))
             article.parse()
-            if article.text: #Make sure it was able to extract something
-                results.append({'text': article.text,
-                                'url': url})
+            if article.text:
+                cleaned = cleanText(article.text)
+                if cleaned:
+                    results.append({'text': cleaned,
+                                    'url': url})
     return results
 
 
 def getHTML(url):
     return str(subprocess.check_output(["phantomjs", "getHTML.js", url]))
+
+def cleanText(doc):
+    sentences = sent_tokenize(doc)
+    cleanSentences = []
+    if len(sentences) < 5: #Too short...
+        return False
+    for sentence in sentences:
+        if not len(sentence.split(" ")) < 10: #Make sure it's not too short, which would probably mean it's a heading
+            sentence = ' '.join(sentence.split())
+            cleanSentences.append(sentence)
+    return cleanSentences
+
+
 
 if __name__ == "__main__":
     url = "http://www.biography.com/people/barack-obama-12782369"

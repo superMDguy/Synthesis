@@ -1,0 +1,102 @@
+#
+# CIAO - database handler
+#
+# composes queries and hands them to the appropriate view handler
+#
+ciao.db = [];
+ciao.db.init = function (db) {
+    local eid, rid, qid, query, kid, n;
+
+    load (db);
+    for (eid = 0; ciao.db.entfields[eid]; eid = eid + 1)
+        ciao.db.revemap[ciao.db.entfields[eid].name] = eid;
+    for (rid = 0; ciao.db.relfields[rid]; rid = rid + 1)
+        ciao.db.revrmap[ciao.db.relfields[rid].name] = rid;
+    for (qid = 0; ciao.db.queries[qid]; qid = qid + 1)
+        ciao.db.revqmap[ciao.db.queries[qid].label] = ciao.db.queries[qid];
+    for (qid = 0; ciao.db.queries[qid]; qid = qid + 1) {
+        query = ciao.db.queries[qid];
+        for (kid in query.kinds) {
+            if (ciao.db.kindqueries[kid])
+                n = tablesize (ciao.db.kindqueries[kid]);
+            else
+                n = 0;
+            ciao.db.kindqueries[kid][n] = query.label;
+        }
+    }
+};
+ciao.db.doquery = function (pcanvas, pnode, modes, s, attr) {
+    local query, type, name, n, ent1, ent2, kindflag, outmodeflag, cmd;
+    local vid, var, dir, eid, rid, nam, val;
+
+    query = ciao.db.revqmap[s];
+    type = query.type;
+    name = query.name;
+    if (query.ask) {
+        if (~(n = ask ('number of levels:')))
+            return;
+        name = concat (query.name, '-', n);
+    }
+    if (modes.dirmode == 'bwd mode') {
+        dir = 'bwd';
+	if (type == 'rel') {
+		ent1 = 2;
+		ent2 = 1;
+	}
+	else {
+		ent1 = 1;
+		ent2 = 2;
+	}
+    } else {
+        ent1 = 1;
+        ent2 = 2;
+        dir = 'fwd';
+    }
+    if (modes.kindmode == 'same kind')
+        kindflag = 'same';
+    else if (modes.kindmode == 'all kinds')
+        kindflag = 'all';
+    else # it's a function, file, etc.
+        kindflag = modes.kindmode;
+    if (~(outmodeflag = query.outmodes[modes.outmode]))
+        outmodeflag = 'none';
+    cmd = concat (ciao.db.cmd, ' ', outmodeflag, ' ',
+            type, ' ', name, ' ', dir, ' ', kindflag, ' -v ');
+    for (vid = 0; ciao.db.variables[vid]; vid = vid + 1) {
+        var = ciao.db.variables[vid];
+        if (ciao.db.values[var] & ciao.db.values[var] ~= '')
+            cmd = concat (cmd, " ", var, " '", ciao.db.values[var], "'");
+    }
+    cmd = concat (cmd, ' -e1 ');
+    for (eid = 0; ciao.db.entfields[eid]; eid = eid + 1) {
+        nam = ciao.db.entfields[eid].name;
+        if ((val = attr.ent[ent1][eid]) & val ~= '')
+            cmd = concat (cmd, " ", nam, " '", val, "'");
+    }
+    cmd = concat (cmd, ' -e2 ');
+    for (eid = 0; ciao.db.entfields[eid]; eid = eid + 1) {
+        nam = ciao.db.entfields[eid].name;
+        if ((val = attr.ent[ent2][eid]) & val ~= '')
+            cmd = concat (cmd, " ", nam, " '", val, "'");
+    }
+    cmd = concat (cmd, ' -r ');
+    for (rid = 0; ciao.db.relfields[rid]; rid = rid + 1) {
+        nam = ciao.db.relfields[rid].name;
+        if ((val = attr.rel[rid]) & val ~= '')
+            cmd = concat (cmd, " ", nam, " '", val, "'");
+    }
+#echo (cmd);
+    if (outmodeflag == 'text')
+        ciao.tv.doquery (cmd);
+    else if (outmodeflag == 'db')
+        ciao.tv.doquery (cmd);
+    else if (outmodeflag == 'graph')
+        ciao.gv.doquery (
+            pcanvas, pnode, modes, [0 = ['cmd' = cmd;];], '', name
+        );
+    else
+        ciao.db.simplequery (cmd);
+};
+ciao.db.simplequery = function (cmd) {
+    system (concat (cmd, ' &'));
+};

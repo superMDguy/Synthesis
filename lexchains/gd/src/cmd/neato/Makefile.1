@@ -1,0 +1,15 @@
+:PACKAGE: ast
+CCFLAGS= -O 
+NAWK=nawk
+
+neato :: colxlate.c emit.c gifgen.c hpglgen.c ismapgen.c input.c \
+	mifgen.c neato.c output.c psgen.c shapes.c solve.c utils.c splines.c \
+		-lgraph -ldict -lgd -lm +last
+
+colortbl.h	: color_names awk/colortbl.awk
+	sed "s/_//g" color_names | sort > color_lib
+	$(NAWK) -f awk/colortbl.awk color_lib > colortbl.h
+	rm color_lib
+
+ps.h : ps.lib
+	$(NAWK) -f awk/stringize.awk ps.lib > ps.h

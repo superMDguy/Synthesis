@@ -1,0 +1,98 @@
+#
+# CIAO - variables view
+#
+# Implements the presentation of global variables
+#
+ciao.vv.start = function (vars, vals) {
+    local aname, vid, s;
+
+    ciao.vv.view = createwidget (-1, [
+        'size' = ciao.sizes.vview;
+        'origin' = ciao.origs.vview;
+        'type' = 'view';
+        'name' = 'CIAO - Variables';
+    ]);
+    ciao.vv.array = createwidget (ciao.vv.view, [
+        'type' = 'array';
+    ]);
+    ciao.vv.text = createwidget (ciao.vv.array, [
+        'type' = 'text';
+        'mode' = 'input';
+    ]);
+    ciao.vv.button1 = createwidget (ciao.vv.array, [
+        'type' = 'button';
+        'text' = 'done';
+    ]);
+    ciao.vv.button2 = createwidget (ciao.vv.array, [
+        'type' = 'button';
+        'text' = 'cancel';
+    ]);
+    widgets[ciao.vv.view].closeview = ciao.vv.closeview;
+    widgets[ciao.vv.button1].pressed = ciao.vv.done;
+    widgets[ciao.vv.button2].pressed = ciao.vv.cancel;
+    widgets[ciao.vv.array].resize = ciao.vv.resize;
+    ciao.vv.vars = vars;
+    ciao.vv.vals = vals;
+    aname = 'text';
+    for (vid = 0; vars[vid]; vid = vid + 1) {
+        s = '';
+        if (vals[vars[vid]])
+            s = vals[vars[vid]];
+        setwidgetattr (ciao.vv.text, [
+            aname = concat (vars[vid], '=', s);
+        ]);
+        aname = 'appendtext';
+    }
+    setwidgetattr (ciao.vv.array, ['size' = ciao.sizes.vview;]);
+};
+ciao.vv.closeview = function (data) {
+    destroywidget (ciao.vv.view);
+    remove ('view', ciao.vv);
+    remove ('array', ciao.vv);
+    remove ('text', ciao.vv);
+    remove ('button', ciao.vv);
+};
+ciao.vv.done = function (data) {
+    local wattr, t, tt, ttt, i, j, name, value;
+
+    wattr = getwidgetattr (ciao.vv.text, [0 = 'text';]);
+    t = split (wattr.text, '\n');
+    for (i = 0; t[i]; i = i + 1) {
+        tt = split (t[i], '=');
+        if (~tt[0])
+            continue;
+        if (tablesize (tt) ~= 2) {
+            echo ('bad entry in line ', i + 1);
+            return;
+        }
+        ttt = split (tt[0], ' ');
+        if (tablesize (ttt) ~= 1) {
+            echo ('bad attribute name in line ', i + 1);
+            return;
+        }
+        name = ttt[0];
+        ttt = split (tt[1], ' ');
+        value = '';
+        if (ttt[0])
+            value = ttt[0];
+        for (j = 1; ttt[j]; j = j + 1)
+            value = concat (value, ' ', ttt[j]);
+        ciao.vv.vals[name] = value;
+    }
+    ciao.vv.closeview (data);
+};
+ciao.vv.cancel = function (data) {
+    ciao.vv.closeview (data);
+};
+ciao.vv.resize = function (data) {
+    local ret, x, y;
+
+    x = data.size.x;
+    y = data.size.y;
+    ret = [
+        ciao.vv.button1 = ['x' = x; 'y' = 30;];
+        ciao.vv.button2 = ['x' = x; 'y' = 30;];
+        ciao.vv.text = ['x' = x; 'y' = y - 60;];
+    ];
+    return ret;
+};

@@ -1,0 +1,20 @@
+'dot' 92c
+
+To install, run "make" in this directory.
+If it succeeds, move the "dot" executable
+and the man page "dot.1" to the appropriate
+directories for your site.
+
+dotguide.ps is a PostScript document.  If you can't
+print it locally, try deleting the EPSF headers
+(lines beginning %%).  If that doesn't work, ask
+us for a paper copy.
+
+To try an example, run
+
+	dot -Tps examples/unix.dot -o unix.ps
+
+Notes on the source code
+
+While some parts of the code are reasonably clean, others
+read like the engineering prototype that it is.

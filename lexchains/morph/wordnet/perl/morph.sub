@@ -1,0 +1,572 @@
+#!/bin/perl
+
+$TRUE = 1 ;
+$FALSE = 0 ;
+
+$DOS = $FALSE ;
+$UNIX = $TRUE ;
+
+$NUMPARTS = 4 ;
+$NUMPREPS = 15 ;
+
+$MAX_TRIES = 5 ; 
+
+($NOUN, $VERB, $ADJ, $ADV) = (1..4) ;
+@POS = ($NOUN, $VERB, $ADJ, $ADV) ;
+@POS_LIT = (NULL, "noun", "verb", "adjective", "adverb") ;
+
+if ($DOS)
+ { $EXCFILE = "%s\%s" ;
+   @exc_fnames =
+     ( NULL, "noun.exc", "verb.exc", "adj.exc", "adv.exc"  ) ;
+   @idx_fnames =
+     ( NULL, "noun.idx", "verb.idx", "adj.idx", "adv.idx"  ) ;   
+   $DEFAULTDIR = '.' ;
+   }
+
+if ($UNIX)
+ { $EXCFILE = "%s/%s" ;
+   @exc_fnames =
+     ( NULL, "noun.exc", "verb.exc", "adj.exc", "adv.exc"  ) ;
+   @idx_fnames =
+     ( NULL, "index.noun", "index.verb", "index.adj", "index.adv") ;
+   $curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+   $DEFAULTDIR = $curdir . '/..' ;
+   }
+
+
+@exc_fps = (NULL, *exc_noun, *exc_verb, *exc_adj, *exc_adv) ;
+
+@sufx = (
+# Noun suffixes
+    "s","ses","xes","zes","ches","shes",
+# Verb suffixes
+    "s","ies","es","es","ed","ed","ing","ing",
+# Adjective suffixes
+    "er","est","er", "est"
+      ) ;
+
+@addr = (
+# Noun endings
+    "", "s", "x", "z", "ch", "sh",
+# Verb endings
+    "", "y", "e", "", "e", "", "e", "",
+# Adjective endings
+    "", "", "e", "e"
+        ) ;
+
+@offsets = ( 0, 0, 6, 14, 18 ) ;
+@cnts    = ( 0, 6, 8, 4, 0 ) ;
+
+$NUMPARTS = 4 ;
+$NUMPREPS = 15 ;
+
+%prepositions = (
+    "to", 2,
+    "at", 2,
+    "of", 2,
+    "on", 2,
+    "off", 3,
+    "in", 2,
+    "out", 3,
+    "up", 2,
+    "down", 4,
+    "from", 4,
+    "with", 4,
+    "into", 4,
+    "for", 3,
+    "about", 5,
+    "between", 7,
+     ) ;
+
+# /* Open exception list files */
+
+
+sub do_init
+ {
+    local ($searchdir, $pos, $fname) ;
+    
+    $searchdir = $ENV{"MORPHDIR"} || $DEFAULTDIR ;
+
+    foreach $pos (@POS)
+     { $fname
+         = sprintf($EXCFILE, $searchdir, $exc_fnames[$pos]) ;
+       &load_exc_file($fname, $exc_fps[$pos]) ;
+       $fname
+         = sprintf($EXCFILE, $searchdir, $idx_fnames[$pos]) ;
+       &load_idx_file($fname, *idx, $pos) ;
+       }
+    }
+
+sub load_exc_file
+ { local ($fname, *arr) =  @_ ;
+   local ($line, $exc, $lemas) ;
+
+   print STDERR "Loading $fname\n" ;
+
+   open (EXC, '<'.$fname)
+           || die "Could not open $fname\n" ;
+
+   while (<EXC>)
+    { ($exc, $lemas) = /([\w-\.']+)\s+(.*)$/ ; #'
+      $arr{$exc} = $lemas ; 
+      }
+
+   close EXC ;
+   }
+
+sub load_idx_file
+ { local ($fname, *arr, $pos) =  @_ ;
+   local ($word, $ent) ;
+
+   print STDERR "Loading $fname\n" ;
+
+   open (IDX, '<'.$fname)
+           || die "Could not open $fname\n" ;
+
+   while (<IDX>)
+    { ($word) = /^([\w-\.']+)/ ; #'
+      if ($word gt "a")
+       { $ent = $arr{$word} ;
+         $arr{$word} = $ent.' '.$pos ;
+         }
+#D      if ($word lt "bv" && $word gt "bu")
+#D       { print " idx{$word} = $arr{$word}\n" ;
+#D         }
+      }
+
+   close IDX ;
+   }
+
+sub exc_lookup
+{
+    local($word, $pos) = @_ ;
+    local($line) ;
+
+#
+# Commented - all EXC files should be open
+#
+#    if ($exc_fps[pos] == NULL)
+#     { return(NULL); }
+#
+
+#    /* first time through load line from exception file */
+
+#D    printf "in exc_lookup word=$word\n" ;
+
+    if ($word ne NULL)
+     { $line = $exc_fps[$pos]{$word} ;
+       if ($line)
+         { @exc_lookup_excs = split (/\s+/, $exc_fps[$pos]{$word}) ;
+           $exc_lookup_num = $#exc_lookup_excs ;
+           $exc_lookup_cur = $[ ;
+           }
+        else  # This word is not an exceptional inflexion 
+         { $exc_lookup_num = $[-1 ;
+           $exc_lookup_cur = $[ ;   # i.e. greater than num
+           }
+#D       print "-- num = $exc_lookup_num cur=$exc_lookup_cur\n" ;
+       }
+
+
+    if($exc_lookup_cur <= $exc_lookup_num) 
+      { $exc_lookup_cur = $exc_lookup_cur+1 ;
+        return ($exc_lookup_excs[$exc_lookup_cur-1]) ;
+        }
+     else
+      { $exc_lookup_num = $[-1 ;
+        $exc_lookup_cur = $[ ;
+        return (NULL) ;
+        }
+     
+
+    }
+
+
+# /* Try to find baseform (lemma) of word or collocation in POS.
+#    Works like strtok() - first call is with string, subsequent calls
+#    with NULL argument return additional baseforms for original string. */
+
+sub morphstr
+{
+    local($origstr, $pos) = @_ ;
+
+    local (@words, $word, $tmp) ;
+    local ($cnt, $st_idx, $end_idx, $prep) ;
+    local ($end_idx1, $end_idx2, $append) ;
+
+    $st_idx = 0 ;
+
+#    if (pos == SATELLITE)
+#   pos = ADJ;
+
+#    /* First time through for this string */
+
+    if ($origstr ne NULL)
+     {
+#      /* Assume string hasn't had spaces substitued with '_' */
+       $morphstr_str = $origstr ;
+       $morphstr_str =~ tr/\ /_/ ;
+       $morphstr_str =~ tr/A-Z/a-z/ ;
+       @words = split(/_/, $morphstr_str) ;
+       $cnt = $#words ;
+       $morphstr_searchstr = "" ;
+       $morphstr_svprep = 0 ;
+
+#       /* first try exception list */
+
+       $tmp = &exc_lookup($morphstr_str, $pos) ;
+       if (($tmp ne NULL) && ($tmp ne $morphstr_str))
+        { $morphstr_svcnt = 1;      # /* force next time to pass NULL */
+          return($tmp) ;
+          }
+
+#      /* Then try simply morph on original string */
+
+      if ($pos != $VERB)
+        { $tmp = &morphword($morphstr_str, $pos) ;
+          if (($tmp ne NULL) && ($tmp ne $morphstr_str))
+           { return($tmp) ;
+             }
+          }
+    
+       if (($pos == $VERB) && ($cnt > 1) &&
+           (($prep = &hasprep(*words, $morphstr_cnt)) > 0))
+         {
+#
+#          /* assume we have a verb followed by a preposition */
+#
+            $morphstr_svprep = $prep;
+            
+# morphprep is not implemented for the time ebing           
+#           return(&morphprep($morphstr_str)) ;
+            return ($words[1]) ;
+           }
+        else
+         { 
+#          @words = split (/-/, $morphstr_str) ;
+#          $morphstr_svcnt = $cnt = $#words ;
+#          while ($origstr && --$cnt) {
+#      end_idx1 = strchr($morphstr_str + st_idx, '_');
+#      end_idx2 = strchr($morphstr_str + st_idx, '-');
+#      if (end_idx1 && end_idx2) 
+#        { if (end_idx1 < end_idx2)
+#            {
+#              end_idx = (int)(end_idx1 - $morphstr_str);
+#              append = "_";
+#              }
+#           else
+#            {
+#              end_idx = (int)(end_idx2 - $morphstr_str);
+#              append = "-";
+#              }
+#          }
+#        else 
+#         { if (end_idx1)
+#             {
+#               end_idx = (int)(end_idx1 - $morphstr_str);
+#               append = "_";
+#               }
+#            else
+#             {
+#               end_idx = (int)(end_idx2 - $morphstr_str);
+#               append = "-";
+#               }
+#           }
+
+#      if (end_idx < 0) return(NULL);      /* shouldn't do this */
+#      strncpy(word, $morphstr_str + st_idx, end_idx - st_idx);
+#      word[end_idx - st_idx] = '\0';
+#      if(tmp = morphword(word, pos))
+#          strcat($morphstr_searchstr,tmp);
+#      else
+#          strcat($morphstr_searchstr,word);
+#      strcat($morphstr_searchstr, append);
+#      st_idx = end_idx + 1;
+#       }
+
+           $word = substr($morphstr_str, $st_idx) ;
+           $tmp = &morphword($word, $pos) ;
+           if ($tmp ne NULL)
+             { $morphstr_searchstr = $morphstr_searchstr.$tmp ; 
+               }
+            else
+             { $morphstr_searchstr = $morphstr_searchstr.$word ;
+               }
+
+           if (($morphstr_searchstr ne $morphstr_str) &&
+                &is_defined($morphstr_searchstr,$pos))
+             { return($morphstr_searchstr);
+               }
+            else
+             { return(NULL);
+               }
+           }
+       }
+    else
+     {      #    /* subsequent call on string */
+
+#          /* if verb has preposition, no more morphs */
+       if ($morphstr_svprep > 0)
+         { $morphstr_svprep = 0 ;
+           return(NULL);
+           }
+        elsif ($morphstr_svcnt == 1)
+          { return(&exc_lookup(NULL, $pos)) ;
+            }
+         else
+          { $morphstr_svcnt = 1 ;
+            $tmp = &exc_lookup($morphstr_str, $pos) ;
+            if (($tmp NE NULL) && ($tmp ne $morphstr_str))
+              { return($tmp);
+                }
+             else
+              { return(NULL);
+                }
+            }
+       }
+}
+
+# /* Try to find baseform (lemma) of individual word in POS */
+
+sub morphword
+{
+    local($word, $pos) = @_ ;
+
+    local($retval) = "" ;
+    local($tmpbuf) = "" ;
+    local($end) = "" ;
+    local($cnt, $offset, $i) ;
+
+    if ($word eq NULL) { return(NULL); }
+
+#   /* first look for word on exception list */
+
+    if( ($tmp = &exc_lookup($word, $pos)) ne NULL)
+       { return($tmp); }     # /* found it in exception list */
+
+    if ($pos == $ADV)    #   /* only use exception list for adverbs */
+     { return(NULL); 
+       }
+
+    if ($pos == $NOUN)
+     { if (&strend($word, "ful"))
+         { $cnt = rindex($word, 'f') ;
+           $tmpbuf = $tmpbuf.substr($word, 0, $cnt-1) ;
+           $end = "ful" ;
+           }
+        else
+      # /* check for noun ending with 'ss' or short words */
+         { if (&strend($word, "ss") || (length($word) <= 2))
+            { return(NULL); 
+              }
+           }
+       }
+
+# /* If not in exception list, try applying rules from tables */
+
+    if ($tmpbuf eq "") 
+     { $tmpbuf = $word ;
+       }
+ 
+    $offset = $offsets[$pos];
+    $cnt = $cnts[$pos];
+
+    for($i = 0; $i < $cnt; $i = $i+1)
+     { $retval = &wordbase($tmpbuf, $i + $offset);
+       if(($retval ne $tmpbuf) && &is_defined($retval, $pos))
+        { $retval = $retval.$end ;
+          return($retval) ;
+          }
+        }
+    return(NULL);
+}
+
+sub strend
+{
+  local ($str1, $str2) = @_ ;
+
+  local ($l2) = length($str2) ;
+
+  if ($l2 >= length($str1))
+   { return($FALSE) ;
+     } 
+
+  if (substr($str1, -$l2) eq $str2)
+   { return($TRUE) ;
+     } 
+    
+  return($FALSE) ;
+
+  }
+
+sub wordbase
+{
+
+    ($word, $ender) = @_ ;
+    local ($copy, $lword) ;
+
+  
+    $copy = $word ;
+    $lword = length($word) ;
+    
+    if(&strend($copy,$sufx[$ender]))
+     { $copy = substr($copy,0, $lword-length($sufx[$ender])).$addr[$ender] ;
+       }
+    return($copy) ;
+}
+
+sub hasprep
+{
+#    /* Find a preposition in the verb string and return its
+#       corresponding word number. */
+   local (*wordvec, $wdcnt) = @_ ;
+   local ($prepnum, $wdnum) ;
+
+   for ($wdnum = 1; $wdnum < $wdcnt; $wdnum = $wdnum+1)
+    {
+      if ($prepositions{$wordvec[$wdnum]})
+       { return($wdnum) ;
+         }
+      }
+    return(0);
+}
+
+
+#sub morphprep
+#{
+#    local ($s) = @_ ;
+#    
+#    local ($rest, $exc_word, $lastwd, $last) ;
+#    
+#    local ($i, $offset, $cnt) ;
+#    local ($word, @wordvec, $end) ;
+
+#    $lastwd = NULL ;
+#
+#    /* Assume that the verb is the first word in the phrase.  Strip it
+#       off, check for validity, then try various morphs with the
+#       rest of the phrase tacked on, trying to find a match. */
+#
+
+#    
+#    rest = strchr(s, '_');
+#    last = strrchr(s, '_');
+#    if (rest != last) #      /* more than 2 words */
+#     { if (lastwd = morphword(last + 1, NOUN)) 
+#        { strncpy(end, rest, last - rest + 1);
+#          end[last-rest+1] = '\0';
+#          strcat(end, lastwd);
+#          }
+#        }
+#    
+
+#    strncpy(word, s, rest - s);
+#    word[rest - s] = '\0';
+#    for (i = 0, cnt = strlen(word); i < cnt; i++)
+#   if (!isalnum(word[i])) return(NULL);
+
+#    offset = offsets[VERB];
+#    cnt = cnts[VERB];
+
+#    /* First try to find the verb in the exception list */
+
+#    if ((exc_word = exc_lookup(word, VERB)) &&
+#   strcmp(exc_word, word)) {
+
+#   sprintf($morphprep_retval, "%s%s", exc_word, rest);
+#   if(is_defined($morphprep_retval, VERB))
+#       return($morphprep_retval);
+#   else if (lastwd) {
+#       sprintf($morphprep_retval, "%s%s", exc_word, end);
+#       if(is_defined($morphprep_retval, VERB))
+#      return($morphprep_retval);
+#   }
+#    }
+
+#    for (i = 0; i < cnt; i++) {
+#   if ((exc_word = wordbase(word, (i + offset))) &&
+#       strcmp(word, exc_word)) { /* ending is different */
+
+#       sprintf($morphprep_retval, "%s%s", exc_word, rest);
+#       if(is_defined($morphprep_retval, VERB))
+#      return($morphprep_retval);
+#       else if (lastwd) {
+#      sprintf($morphprep_retval, "%s%s", exc_word, end);
+#      if(is_defined($morphprep_retval, VERB))
+#          return($morphprep_retval);
+#       }
+#   }
+#    }
+#    sprintf($morphprep_retval, "%s%s", word, rest);
+#    if (strcmp(s, $morphprep_retval))
+#   return($morphprep_retval);
+#    if (lastwd) {
+#   sprintf($morphprep_retval, "%s%s", word, end);
+#   if (strcmp(s, $morphprep_retval))
+#       return($morphprep_retval);
+#    }
+#    return(NULL);
+#}
+
+
+sub is_defined
+ { 
+   local($searchstr, $pos) = @_ ;
+#D print " -- is_defined ($searchstr, $pos)\n" ;
+   return(&getindex($searchstr, $pos)) ;
+   }
+
+# /* 'smart' search of index file.  Find word in index file, trying different
+#    techniques - replace hyphens with underscores, replace underscores with
+#    hyphens, strip hyphens and underscores, strip periods. */
+
+
+sub getindex
+ { 
+    local($searchstr, $pos) = @_ ;
+
+    local($idx_ent) ;
+    local(@strings) ;       # /* vector of search strings */
+
+    local($i) ;
+
+
+#    /* Prepare vector of search strinsg */
+
+    for ($i = 0; $i < $MAX_TRIES; $i = $i+1)
+     { $strings[$i] = $searchstr ;
+       }
+    $strings[1] =~ tr/_/-/ ;
+    $strings[2] =~ tr/-/_/ ;
+
+
+#    /* remove all spaces and hyphens from last search string, then
+#       all periods */
+
+    $strings[3] =~ s/[_-]//g ;
+    $strings[4] =~ s/\.//g ;
+
+#D    foreach $s (@strings)
+#D     { printf "Index search for $s\n" ;
+#D       }
+
+#    /* Eliminate duplications */
+
+    for ($i = 0; $i < $MAX_TRIES; $i = $i+1)
+     { if (($i == 0) || $strings[$i] ne $strings[0])
+        { $idx_ent = $idx{$strings[$i]} ;
+          if (index($idx_ent, $pos) >= $[)
+           { return($TRUE) ;
+              }
+          } 
+       }
+
+    return($FALSE);
+    }
+
+
+&do_init ;
+
+$TRUE ;          # for successful require
+

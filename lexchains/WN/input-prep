@@ -1,0 +1,4 @@
+#!/usr/bin/csh
+cd /users/silver2/projects/clips/lingtools/tokenizer/perl/; sent-morph ../../WN/$1 > ../../WN/$2 ;
+
+

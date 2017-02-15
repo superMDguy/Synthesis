@@ -1,0 +1,72 @@
+#!/bin/perl
+
+#
+# Dividing into sentences (via sent-tok) and tagging (Brill's tagger)
+#
+#   sent-tok-tag input-file [c=comment_char] (passed to sent-tok)
+#
+#  always writes to stdout
+#
+#
+#  (C)  Ido Dagan and Yuval Krymolowski, IR lab, Bar Ilan University,
+#       Ramat Gan, Israel
+#
+
+#
+# Some general definitions and pointers to invoked commands
+#
+
+$curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+unshift(@INC,$curdir);
+require "misc-defs" ;
+
+$usage = <<"EOM" ;
+This perl performs division into sentences+tokenization (via sent-tok)
+and invokes Brill's tagger
+
+Usage:
+     sent-tok-tag input-file  [c=comment_char] (passed to sent-tok)    (output is always sent to stdout)
+
+EOM
+#'
+($infile, $ccom) = @ARGV ;
+
+
+
+
+if (! $infile)
+{ die "$usage" ;
+  }
+
+$sent_tok_outfile = $tmp_dir."/sent-tok.out" ;
+if ($UNIX)
+ { $sent_tok_outfile = $sent_tok_outfile . '.' . $file_name_suffix ;
+    }
+
+$cmd = "$sent_tok_cmd $infile $sent_tok_outfile \"$ccom\"" ;
+
+
+system ($cmd) ; wait
+  || die "Sentencing/tokenizing was unsuccessful, code $?\n". 
+	 " command was \'$cmd\'\n" ;
+chmod (511, $sent_tok_outfile) ;
+
+if ($DOS)
+ { print STDERR "\n Message: TAGGER NOT CONFIGURED FOR DOS\n\n" ;
+   die ;
+   }
+
+if ($UNIX)
+ { $tagger_cmd =
+     "tagger LEXICON $sent_tok_outfile BIGRAMS ".
+     "LEXICALRULEFILE CONTEXTUALRULEFILE" ;
+   }
+
+# the following code assumes we are under UNIX, may be different for DOS
+
+$cur_dir = $ENV{"PWD"} ;
+
+chdir($tagger_dir) ;
+system($tagger_cmd) ; wait || "Tagging failed, code $?\n" if $? ;
+chdir($cur_dir) ;
+

@@ -1,0 +1,94 @@
+#
+# XRAY stack
+#
+xray.stackkeys = [
+    'data' = 'data';
+    'node' = 'node';
+    'count' = 'count';
+    'args' = 'args';
+    'rect' = 'rect';
+];
+xray.initstack = function () {
+};
+xray.createstack = function (run, name) {
+    run.sview = createwidget (-1, [
+        'origin' = ['x' = 730; 'y' = 250;];
+        'size' = ['x' = 404; 'y' = 204;];
+        'type' = 'view';
+        'name' = 'XRAY stack view';
+    ]);
+    run.sscroll = createwidget (run.sview, [
+        'size' = ['x' = 404; 'y' = 204;];
+        'type' = 'scroll';
+    ]);
+    run.scanvas = createwidget (run.sscroll, [
+        'size' = ['x' = 400; 'y' = 200;];
+        'type' = 'canvas';
+        'borderwidth' = 1;
+    ]);
+    run.swrect = [0 = ['x' = 0; 'y' = 0;]; 1 = ['x' = 400; 'y' = 200;];];
+    setwidgetattr (run.scanvas, ['window' = run.swrect; 'viewport' = run.swrect[1];]);
+    run.sfontname = '9x15';
+    run.sfontsize = 0;
+    run.sframesize = textsize (run.scanvas, 'M', run.sfontname, 0);
+    run.sframesize.y = run.sframesize.y * 2;
+    run.stackn = 0;
+    widgets[run.scanvas].redraw = xray.redrawstack;
+};
+xray.destroystack = function (run) {
+    destroywidget (run.scanvas);
+    destroywidget (run.sscroll);
+    destroywidget (run.sview);
+};
+xray.drawframe = function (run, i, color) {
+    local stackp, s;
+    stackp = run.stackarray[i];
+    if (~stackp.rect)
+        xray.initframe (run, i);
+    if (color == 0) {
+        box (run.scanvas, stackp, stackp.rect, ['fill' = 'on'; 'color' = 0;]);
+        return;
+    }
+    box (run.scanvas, stackp, stackp.rect, ['color' = color;]);
+    s = concat (stackp.data.node.attr.label, '  ',
+            stackp.data.count, '  ', stackp.data.args);
+    text (run.scanvas, null, [
+                'x' = stackp.rect[0].x + 5;
+                'y' = stackp.rect[0].y + 5;
+            ], s, run.sfontname, run.sfontsize, 'ld', ['color' = color;]);
+};
+xray.initframe = function (run, i) {
+    run.stackarray[i].rect = [
+        0 = ['x' = run.swrect[0].x; 'y' = run.sframesize.y * i;];
+        1 = ['x' = run.swrect[1].x; 'y' = run.sframesize.y * (i + 1);];
+    ];
+    if (run.swrect[1].y < run.sarray[i].rect[1].y) {
+        run.swrect[1].y = run.sarray[i].rect[1].y;
+        setwidgetattr (run.scanvas, ['window' = run.swrect; 'viewport' = run.swrect[1];]);
+        redrawstack ();
+    }
+};
+xray.pushstack = function (run, node, count, args) {
+    run.stackarray[run.stackn][xray.stackkeys.data] = [
+        xray.stackkeys.node  = node;
+        xray.stackkeys.count = count;
+        xray.stackkeys.args  = args;
+    ];
+    run.stackn = run.stackn + 1;
+};
+xray.popstack = function (run) {
+    if (run.stackn == 0)
+        return;
+    run.stackarray[run.stackn - 1].data = [];
+    run.stackn = run.stackn - 1;
+};
+xray.resetstack = function (run) {
+    run.stackn = 0;
+};
+xray.redrawstack = function (data) {
+    local run, sid;
+    clear (data.widget);
+    run = xray.runarray[widgets[data.widget].runi];
+    for (sid = 0; sid < run.stackn; sid = sid + 1)
+        xray.drawframe (run, sid, 1);
+};

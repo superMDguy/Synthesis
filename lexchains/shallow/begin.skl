@@ -1,0 +1,66 @@
+#!/usr/local/bin/perl5
+
+sub brief
+{ local (*features, $target) = @_ ;
+  local (@words, $all, $num, $num1, $out, $out_lema, %word, %lema) ;
+  @marked_words = values %features ;
+  $all = join (' ', @marked_words) ;
+  $_ = $all ;
+  while (m!{([^&]*)&(\d+)/[^/]+/([^}]+)}!)
+   { $num = $2 ;
+     if ($num <= 9)
+      { $num = '0'.$num ; # for sorting keys %word
+        }
+     $word{$num} = $1 ;
+     $lema{$num} = $3 ;     
+     $_ = $' ;
+     }
+  $out = '' ;
+  $out_lema = '' ;
+  foreach $num (sort keys %word)
+   { $num1 = $num+0 ;    # remove leading zero if present
+     $out = $out .  $word{$num} . "($num1)" . '-' ;
+     $out_lema = $out_lema .  $lema{$num} . '-' ;     
+     }
+  chop ($out) ; # remove the last hyphen
+  chop ($out_lema) ; # remove the last hyphen
+  return ($out . '/@' . $target . '/' . $out_lema) ;
+  }
+
+sub quote
+{ local($fnd, $target) = @_ ;
+
+  local($out, $out_lema) ;
+
+  $out = '' ;
+  $out_lema = '' ;
+  $_ = $fnd ;
+  while (m!{([^&]*)&(\d+)/[^/]+/([^}]+)}!)
+   { $out = $out. $1 . "($2)" . '-' ;
+     $out_lema = $out_lema . $3 . '-' ;
+     $_ = $' ;
+     }
+  chop ($out) ; # remove the last hyphen
+  chop ($out_lema) ; # remove the last hyphen
+  return ($out . '/@' . $target . '/' . $out_lema) ;
+  }
+
+#
+# In order to make the patterns and the sentence as short as possible, patterns
+# already found (e.g., noun_mod) are marked by two letters. In debug prints
+# we resolve the pairs to the original rule name
+#
+sub resolve_marks
+{ local($in) = @_ ;
+
+  local($out, $mark) ;
+  $out = $in ;
+
+  foreach $mark (keys %marks)
+   { $out =~ s/<<$mark/<<$marks{$mark}/g ;
+     $out =~ s/<<\($mark/<<\($marks{$mark}/g ;
+     $out =~ s/<<\/$mark/<<\/$marks{$mark}/g ;
+     }
+  return($out) ;
+  }
+

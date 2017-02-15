@@ -1,0 +1,103 @@
+
+sub replace_overlap
+{ local($input, $pat, $tag) = @_ ;
+  
+  local($output) = "" ;
+  local($num) = 0 ;
+  local($ltag) = length('<<>>') + length($tag) ;
+  local($len) ;
+
+  $_ = $input ;
+  
+  while (m!$pat!)
+   { $num = $num+1 ;
+     $replace = "<<$tag$num>>$&<</$tag$num>>" ;
+     $len = length($1)+$ltag+length($num) ;
+     $output = $output. $` . substr($replace,0,$len) ;
+     $_ = substr($replace,$len).$' ;
+     print "len=$len out=$output _=$_ 1=$1\n" ;
+     }
+
+  $_ = $output . $_  if ($output) ;
+
+  return ($_) ;
+
+  }
+
+#
+# Given a pattern "a b c-head=c d-head=d e f",
+#  extract a vector of head names (c-head, d-head)
+#  and put the corresponding pattern in parens.
+# The output pattern will be "a b (== c ) (== d ) e f".
+#
+sub extract_heads 
+{ local (*pat, *heads) = @_ ;
+  @heads = ($pat =~/([-\w]+)=/g) ;
+  $pat =~ s/([-\w]+=)([^\s]+)/(==\ \2\ )/g ;
+  }
+
+sub enumerate_heads
+{ local (*pat, *head_refs) = @_ ;
+  local ($count) = 0 ;
+  local ($before, $after) ;
+  local (@left_par) ;
+
+  local ($out_pat) = "" ;
+
+  @head_refs = () ;
+  
+  $_ = $pat ;
+
+  while (m!\(==!)
+  { # a blank is appended because the (== may be preceeded by a ( . In this case 
+    # the ( will be at the end of $before and not detected by the @left_par pattern.
+    # This pattern expects a non-? character after the ( .
+    $before = $`.' ' ; 
+    $after = $' ;
+    @left_par = ($before =~ /(\()(?![?])/g) ;
+    chop ($before) ; # delete the added blank
+    # add 1 because $#x is 0 if it contains one item.
+    # add another 1 for the ( in the 'while' pattern
+    $count = $count + $#left_par + 1 + 1 ;
+    push (@head_refs, $count) ;
+    $out_pat = $out_pat . $before . '(' ;
+    $_ = $after ;
+    }
+
+  $pat = $out_pat . $after if ($out_pat) ;
+}
+
+  
+sub enumerate_ref
+{ local (*pat,*refvec) = @_ ;
+  local ($count) = 0 ;
+  local ($before, $after) ;
+  local (@left_par) ;
+  
+  local($out_pat) = "" ;
+
+  $_ = $pat ;
+  @refvec = () ;
+  
+  while (m!\\\d+!)
+  { $before = $` ; 
+    $after = $' ;
+    @left_par = ($before =~ /(\()(?![?])/g) ;
+    $count = $count + $#left_par + 1 ;
+    $out_pat = $out_pat . $before . '\\' . $count ;
+    push(@refvec,$count) ;
+    $_ = $after ;
+    }
+
+  $pat = $out_pat . $after if ($out_pat) ;
+}
+
+# for returning a TRUE value after require
+
+# $out = replace_overlap("abcdef",'((?:<<[^/].+>>)*[a-z](?:<</.+>>)*)(?:<<[^/].+>>)*[a-z](?:<</.+>>)*',"A") ;
+# print "$out\n" ;
+1 ;
+
+
+
+

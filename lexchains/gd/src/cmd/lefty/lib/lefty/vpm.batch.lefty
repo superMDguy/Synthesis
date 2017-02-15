@@ -1,0 +1,191 @@
+vpm.batch.init = function () {
+    vpm.uifuncs = [
+        'leftup' = vpm.batch.leftup;
+        'rightdown' = vpm.batch.rightdown;
+        'keyup' = vpm.batch.keyup;
+        'redraw' = dotty.redraw;
+    ];
+    vpm.layoutgraph = dotty.layoutgraph;
+    vpm.drawsgraph = dotty.drawsgraph;
+    vpm.drawnode = dotty.drawnode;
+    vpm.undrawnode = dotty.undrawnode;
+    vpm.removenode = dotty.removenode;
+    vpm.drawedge = dotty.drawedge;
+    vpm.undrawedge = dotty.undrawedge;
+    vpm.removeedge = dotty.removeedge;
+    vpm.batch.loadlog ();
+};
+vpm.batch.loadlog = function () {
+    local fd, s, i, t;
+    if (vpm.usecs == 'usecs') {
+        if ((fd = openio ('pipe', 'cs', 'r',
+                concat ('%e -ci -Texec ', vpm.fname))) == -1) {
+            echo ('cannot open cs connection for file : ', vpm.fname);
+            return 0;
+        }
+    } else {
+        if ((fd = openio ('file', vpm.fname, 'r')) == -1) {
+            echo ('cannot open log file: ', vpm.fname);
+            return 0;
+        }
+    }
+    echo ('reading log file');
+    i = 0;
+    while ((s = readline (fd))) {
+        t = split (s, ' ');
+        vpm.log[i] = [
+            'full' = s;
+            'pid' = t[1];
+            'mid' = t[2];
+            'typ' = t[4];
+            'arg0' = t[6];
+            'arg1' = t[7];
+            'arg2' = t[8];
+            'rtn' = t[tablesize (t) - 1];
+        ];
+        i = i + 1;
+    }
+    closeio (fd);
+    vpm.logi = 0; # we'll ignore mount calls for now
+    vpm.logn = i;
+    return 1;
+};
+vpm.batch.playuntil = function (gt, name) {
+    local maxi;
+    if (~name)
+        name = ask ('play until');
+    if (ston (name) > 0) {
+        if ((maxi = ston (name)) > vpm.logn)
+            maxi = vpm.logn;
+        name = "";
+    } else
+        maxi = vpm.logn;
+    vpm.layoutgraph = vpm.online.layoutgraph;
+    vpm.drawsgraph = vpm.online.drawsgraph;
+    vpm.drawnode = vpm.online.drawnode;
+    vpm.undrawnode = vpm.online.undrawnode;
+    vpm.removenode = vpm.online.removenode;
+    vpm.drawedge = vpm.online.drawedge;
+    vpm.undrawedge = vpm.online.undrawedge;
+    vpm.removeedge = vpm.online.removeedge;
+    while (vpm.logi < maxi) {
+        entry = vpm.log[vpm.logi];
+        vpm.logi = vpm.logi + 1;
+        vpm.processentry (gt, entry);
+        if (entry.typ == name)
+            break;
+    }
+    vpm.layoutgraph = dotty.layoutgraph;
+    vpm.drawsgraph = dotty.drawsgraph;
+    vpm.drawnode = dotty.drawnode;
+    vpm.undrawnode = dotty.undrawnode;
+    vpm.removenode = dotty.removenode;
+    vpm.drawedge = dotty.drawedge;
+    vpm.undrawedge = dotty.undrawedge;
+    vpm.removeedge = dotty.removeedge;
+    vpm.layoutgraph (gt);
+};
+vpm.batch.menu1 = [
+    0 = "do layout";
+    1 = "redraw";
+    2 = "save graph";
+    3 = "zoom in";
+    4 = "zoom out";
+    5 = "play non-stop";
+    6 = "find node";
+    7 = "play until";
+    8 = "text view";
+    9 = "exit";
+];
+vpm.batch.domenu1action = function (s, data) {
+    local vt, gt, entry;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (s == "do layout")
+        dotty.layoutgraph (gt);
+    else if (s == "redraw")
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (s == "save graph")
+        dotty.savegraph (gt, null, 'file');
+    else if (s == "zoom in")
+        dotty.zoom (vt, 0.5);
+    else if (s == "zoom out")
+        dotty.zoom (vt, 2);
+    else if (s == "play non-stop") {
+        while (vpm.logi < vpm.logn) {
+            entry = vpm.log[vpm.logi];
+            vpm.logi = vpm.logi + 1;
+            vpm.processentry (gt, entry);
+        }
+    } else if (s == "find node") {
+        dotty.findnode (vt, gt);
+    } else if (s == "play until") {
+        vpm.batch.playuntil (gt, null);
+    } else if (s == "text view") {
+        if (dotty.txtview == 'on')
+            dotty.txtview = 'off';
+        else
+            dotty.txtview = 'on';
+        txtview (dotty.txtview);
+    } else if (s == "exit")
+        exit ();
+};
+vpm.batch.menu2 = [
+    0 = "print entry";
+    1 = "print attr";
+];
+vpm.batch.domenu2action = function (s, data) {
+    if (s == "print entry")
+        dump (data.obj);
+    else if (s == "print attr")
+        dump (data.obj.attr);
+};
+vpm.batch.leftup = function (data) {
+    local gt, entry;
+    gt = dotty.graphs[dotty.views[data.widget].gtid];
+    while (vpm.logi < vpm.logn) {
+        entry = vpm.log[vpm.logi];
+        vpm.logi = vpm.logi + 1;
+        if (vpm.processentry (gt, entry) == 1)
+            break;
+    }
+    if (vpm.logi > vpm.logn) {
+        echo ('at end of log');
+        return;
+    }
+};
+vpm.batch.rightdown = function (data) {
+    local i;
+    if (data.obj) {
+        if ((i = displaymenu (data.widget, vpm.batch.menu2)) >= 0)
+            vpm.batch.domenu2action (vpm.batch.menu2[i], data);
+    } else {
+        if ((i = displaymenu (data.widget, vpm.batch.menu1)) >= 0)
+            vpm.batch.domenu1action (vpm.batch.menu1[i], data);
+    }
+};
+vpm.batch.keyup = function (data) {
+    local vt, gt, kv;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (data.key == 'l')
+        dotty.layoutgraph (gt);
+    else if (data.key == 'Z')
+        dotty.zoom (vt, 0.9);
+    else if (data.key == 'z')
+        dotty.zoom (vt, 1.1);
+    else if (data.key == ' ')
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (data.obj) {
+        if (data.key == 'a')
+            dotty.setattr (gt, data.obj);
+        else if (data.key == 'd') {
+            if (data.obj.eid >= 0 & data.obj.head.data.kind == 'file')
+                vpm.unlinkfile (gt, data.obj);
+            else {
+                if (data.obj.data.kind == 'proc')
+                    vpm.destroyproc (gt, data.obj);
+            }
+        }
+    }
+};

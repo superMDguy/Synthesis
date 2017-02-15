@@ -1,0 +1,71 @@
+#
+# CIAO
+#
+# A graphical front-end for CIA
+#
+load ('dotty.lefty');
+ciao = [];
+#
+# sizes holds the recommended sizes of the various widgets
+#
+ciao.origs = [
+    'mview' = ['x' = 200; 'y' = 200;];
+    'vview' = ['x' = 250; 'y' = 300;];
+    'gview' = ['x' = 500; 'y' = 500;];
+    'tview' = ['x' = 600; 'y' = 500;];
+];
+ciao.sizes = [
+    'mview' = ['x' = 600; 'y' = 500;];
+    'vview' = ['x' = 600; 'y' = 150;];
+    'gview' = ['x' = 500; 'y' = 500;];
+    'tview' = ['x' = 600; 'y' = 500;];
+    'label' = ['x' = 100; 'y' = 25;];
+    'graph' = ['x' = 400; 'y' = 500;];
+];
+ciao.init = function (db) {
+    load ('ciao.db.lefty');
+    load ('ciao.mainview.lefty');
+    load ('ciao.graphview.lefty');
+    load ('ciao.textview.lefty');
+    load ('ciao.varsview.lefty');
+    dotty.init ();
+    dotty.layoutmode = 'async';
+    ciao.db.init (db);
+    ciao.gv.init ();
+    ciao.tv.init ();
+    ciao.mv.init ();
+};
+ciao.main = function () {
+};
+monitorfile = function (data) {
+    local fd, qpt, vid, vt, graph;
+    for (fd in ciao.queriespending) {
+        if (fd == data.fd) {
+            qpt = ciao.queriespending[fd];
+            if (~(graph = dot.readgraph (fd))) {
+                echo ('empty graph for query ', qpt.name);
+                graph = null;
+            }
+            if (qpt.inplace) {
+                dotty.mergegraph (qpt.gt, graph);
+                if (qpt.pnode) {
+                    for (vid in qpt.gt.views)
+                        vt = qpt.gt.views[vid];
+                    setwidgetattr (vt.scroll, ['childcenter' = [
+                        'x' = qpt.pnode.pos.x * vt.vsize.x /
+                                (vt.wrect[1].x - vt.wrect[0].x);
+                        'y' = (vt.wrect[1].y - qpt.pnode.pos.y) * vt.vsize.y /
+                                (vt.wrect[1].y - vt.wrect[0].y);
+                    ];]);
+                }
+                    
+            } else
+                dotty.setgraph (qpt.gt, graph);
+            remove (fd, ciao.queriespending);
+            monitor ('off', fd);
+            closeio (fd);
+            return;
+        }
+    }
+    dotty.monitorfile (data);
+};

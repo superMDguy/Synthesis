@@ -1,0 +1,19 @@
+X11LIB=/usr/lib/X11
+X11INC=/usr/include/X11
+
+CC=gcc
+YACC=yacc
+SED=sed
+RM=rm -f
+RANLIB=/bin/true
+MKDIR=mkdir
+AR=ar
+LD=ld -r
+MV=mv
+CP=cp
+AWK=nawk
+SORT=sort
+INSTALL=cp
+
+CCFLAGS=-fpic -O
+LDFLAGS=

@@ -1,0 +1,144 @@
+The directory /u/ir2/Software/tokenizer/perl contains a package for common functions
+used in IR.
+
+ (C)  Ido Dagan and Yuval Krymolowski, IR lab, Bar Ilan University,
+       Ramat Gan, Israel
+
+
+The perl scripts (tokenize, sent-tok, sent-tok-tag, sent-morph) refer to the
+file 'misc-defs' for pointers to directories and general literals.
+
+The examples below assume the input file 'sample' contains the following two lines
+
+John goes to read three books (two-word terms are divided too). This is
+the second sentence.
+
+(note that the second sentence begins in the first line)
+
+ - Detecting sentence boundaries:
+   ------------------------------
+    A program written by Mark Liberman is installed in directory
+              /u/ir2/Software/sgmlsent
+    This program reads the portion of a file delimited by a <p> and </p> lines and writes
+    each sentence to one line in the output file. An output line begins with <s> and ends
+    with </s> .
+
+    See the README file there.
+
+    It is executed by  
+
+     --> sgmlsent [-o output-file] < input-file (reads from standard input).
+
+    It is possible to invoke this program by a perl script which will accept a raw
+    file as an input and remove the sgml marks which sgmlsent adds. See the
+    description of sent-tok.
+
+ - Tokenization:
+   -------------
+    Done by the Perl script 
+
+     --> tokenize input-file [output-file]
+
+    This secript checks for sgml <p> mark in the beginning of the input file.
+    If it is found, the perl assumes that the file is an output of sgmlsent
+    and :
+      - removes the first and last tokens from each line (<s> and </s>)
+      - ignores lines outside <P>-</p> boundaries
+      - seperates the dot from the end of the last word in the sentence. 
+
+    More details may be found inside the script.
+
+example> tokenize sample
+John goes to read three books ( two - word terms are divided too ) . This is 
+the second sentence . 
+
+ - Detecting sentence boundaries + tokenization:
+   ---------------------------------------------
+    Since tokenization may interfere with the logic of the sentence-boundaries
+    program, it is safer to divide into sentences and then tokenize. 
+
+    This is done by the perl script
+
+     --> sent-tok input-file [output-file] (default is stdout) [comment_char]
+
+    Lines beginning with the comment character are not handled by sgmlsent.
+    The script inserts <p> and </p> in the input beginning and end, if
+    comment_char is specified, it places these markers within the text so that
+    sgmlsent will not handle comment lines.
+    The default output is stdout. In addition, a message is written to stderr.
+
+example> sent-tok sample
+Message: Sentencing successful, output is in /tmp/sent.out
+John goes to read three books ( two - word terms are divided too ) . 
+This is the second sentence . 
+
+Note that now each sentence appears in one line.
+
+ - Tagging:
+   --------
+    By Brill's tagger, in the directory specified in misc-defs.
+    See the README files in that directory
+    (currently /u/ir2/Software/Brill_tagger/RULE_BASED_TAGGER_V1.14) .
+
+    It is recommended to invoke the tagger via the perl script sent-tok-tag because
+    the tagger expects each sentence to be in a seperate line.
+
+     --> sent-tok-tag input-file [comment_char] (passed to sent-tok)
+     
+    This script uses sent-tok and the tagger, both invoked via system() command.
+    Output is always written to stdout.
+
+example> sent-tok-tag sample
+*** stderr messages
+Message: Sentencing successful, output is in /tmp/sent.out
+Message: Sentenced and tokenized data is in /tmp/sent-tok.out
+START STATE TAGGER::LEXICON READ
+START STATE TAGGER:: CORPUS READ
+START STATE TAGGER:: RULEFILE READ
+START STATE TAGGER:: BIGRAMS READ
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+FINAL STATE TAGGER:: READ IN OUTPUT FROM START
+FINAL STATE TAGGER:: READ IN LEXICON
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+*** end of stderr messages
+John/NNP goes/VBZ to/TO read/VB three/CD books/NNS (/( two/CD -/: word/NN terms/NNS are/VBP divided/VBN too/RB )/SYM ./. 
+This/DT is/VBZ the/DT second/JJ sentence/NN ./. 
+
+
+ - Detecting sentence boundaries, tokenization, Tagging and Morphology:
+   --------------------------------------------------------------------
+    Adding a lema to each word in the tagged output. Words whose format
+    is 'word/tag' are converted to 'word/tag/lema' . This is done by
+    the perl script morph-file in the /u/ir2/Software/morph/wordnet/perl
+    directory. 
+
+     --> sent-morph input-file [comment_char] (passed to sent-tok-tag for sent-tok) 
+
+    Output is always written to stdout.
+
+example> sent-morph sample
+Message: Sentencing successful, output is in /tmp/sent.out
+Message: Sentenced and tokenized data is in /tmp/sent-tok.out
+*** stderr messages
+START STATE TAGGER::LEXICON READ
+START STATE TAGGER:: CORPUS READ
+START STATE TAGGER:: RULEFILE READ
+START STATE TAGGER:: BIGRAMS READ
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+FINAL STATE TAGGER:: READ IN OUTPUT FROM START
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Message: Tokenized file is in /tmp/sent-tok-tag.out
+Loading /u/ir2/Software/morph/wordnet/corpus/noun.exc
+Loading /u/ir2/Software/morph/wordnet/corpus/index.noun
+Loading /u/ir2/Software/morph/wordnet/corpus/verb.exc
+Loading /u/ir2/Software/morph/wordnet/corpus/index.verb
+Loading /u/ir2/Software/morph/wordnet/corpus/adj.exc
+Loading /u/ir2/Software/morph/wordnet/corpus/index.adj
+Loading /u/ir2/Software/morph/wordnet/corpus/adv.exc
+Loading /u/ir2/Software/morph/wordnet/corpus/index.adv
+*** end of stderr messages
+John/NNP/John goes/VBZ/go to/TO/to read/VB/read three/CD/three books/NNS/book (/(/( two/CD/two -/:/- word/NN/word terms/NNS/term are/VBP/be divided/VBN/divide too/RB/too )/SYM/) ././.
+This/DT/This is/VBZ/be the/DT/the second/JJ/second sentence/NN/sentence ././.
+
+
+  Mail questions to yuvalk@cs.biu.ac.il

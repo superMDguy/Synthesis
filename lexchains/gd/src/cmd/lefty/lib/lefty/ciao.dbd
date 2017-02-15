@@ -1,0 +1,336 @@
+#
+# CIAO - C database
+#
+# The description of objects and queries for C databases
+#
+ciao.db.name = "C";
+ciao.db.cmd = 'ciaocquery';
+ciao.db.variables = [
+    0 = 'old_db_name';
+    1 = 'new_db_name';
+    2 = 'db_name';
+    3 = 'old_source_directory';
+    4 = 'new_source_directory';
+];
+ciao.db.values = [];
+ciao.db.kindaliases = [
+    'p' = 'function';
+    'f' = 'file';
+    'v' = 'variable';
+    'm' = 'macro';
+    't' = 'type';
+];
+ciao.db.entfields = [
+    0 = [
+        'label' = 'name';
+        'name' = 'name';
+        'values' = [ ];
+    ];
+    1 = [
+        'label' = 'kind';
+        'name' = 'kind';
+        'values' = [
+            0 = 'file';
+            1 = 'function';
+            2 = 'variable';
+            3 = 'macro';
+            4 = 'type';
+        ];
+    ];
+    2 = [
+        'label' = 'file';
+        'name' = 'file';
+        'values' = [ ];
+    ];
+    3 = [
+        'label' = 'dtype';
+        'name' = 'dtype';
+        'values' = [ ];
+    ];
+    4 = [
+        'label' = 'sclass';
+        'name' = 'sclass';
+        'values' = [
+            0 = 'none';
+            1 = 'typedef';
+            2 = 'macdef';
+            3 = 'macudef';
+            4 = 'extern';
+            5 = 'static';
+            6 = 'libsym';
+            7 = 'enum';
+            8 = 'global';
+        ];
+    ];
+    5 = [
+        'label' = 'def';
+        'name' = 'def';
+        'values' = [
+            0 = 'def';
+            1 = 'dec';
+            2 = 'undef';
+        ];
+    ];
+    6 = [
+        'label' = 'id';
+        'name' = 'id';
+        'values' = [ ];
+    ];
+    7 = [
+	'label' = 'tag';
+	'name' = 'tag';
+	'values' = [
+		0 = 'added';
+		1 = 'deleted';
+		2 = 'changed';
+		3 = 'same';
+	];
+    ];
+];
+ciao.db.relfields = [
+    0 = [
+        'label' = 'rkind';
+        'name' = 'rkind';
+        'values' = [ ];
+    ];
+    1 = [
+	'label' = 'rtag';
+	'name' = 'rtag';
+	'values' =  [
+		0 = 'added';
+		1 = 'deleted';
+		2 = 'same';
+	];
+    ];
+];
+ciao.db.queries = [
+    0 = [
+        'label' = 'entity';
+        'name' = 'def';
+        'type' = 'ent';
+        'outmodes' = [
+            'text mode' = 'text';
+            'graph mode' = 'graph';
+            'inplace mode' = 'graph';
+            'db mode' = 'db';
+        ];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+    1 = [
+        'label' = 'relationship';
+        'name' = 'ref';
+        'type' = 'rel';
+        'outmodes' = [
+            'text mode' = 'db';
+            'graph mode' = 'graph';
+            'inplace mode' = 'graph';
+            'db mode' = 'db';
+        ];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+    2 = [
+	'label' = 'diff old & new';
+	'name' = 'diff';
+	'type' = 'ent';
+	'outmodes' = [];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+
+    3 = [
+        'label' = 'edit old source';
+        'name' = 'editold';
+        'type' = 'ent';
+        'outmodes' = [];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+    4 = [
+        'label' = 'edit new source';
+        'name' = 'editnew';
+        'type' = 'ent';
+        'outmodes' = [];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+    5 = [
+        'label' = 'focus';
+        'name' = 'focus';
+        'type' = 'ent';
+        'ask' = 'specify number of levels';
+        'outmodes' = [
+            'text mode' = 'text';
+            'graph mode' = 'graph';
+            'inplace mode' = 'graph';
+            'db mode' = 'db';
+        ];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+    6 = [
+        'label' = 'reachable set';
+        'name' = 'closure';
+        'type' = 'ent';
+	'ask' = 'specify number of levels';
+        'outmodes' = [
+            'text mode' = 'db';
+            'graph mode' = 'graph';
+            'inplace mode' = 'graph';
+            'db mode' = 'db';
+        ];
+        'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+        ];
+    ];
+    7 = [
+        'label' = 'incl';
+        'name' = 'incl';
+        'type' = 'ent';
+        'outmodes' = [
+            'text mode' = 'text';
+            'graph mode' = 'graph';
+            'inplace mode' = 'graph';
+            'db mode' = 'db';
+        ];
+        'kinds' = [
+            'file' = 1;
+        ];
+    ];
+    8 = [
+	'label' = 'MRs affecting';
+	'name' = 'entmrs';
+	'type' = 'ent';
+	'outmodes' = [
+		'graph mode' = 'graph';
+		'inplace mode' = 'graph';
+	];
+	'kinds' = [
+            'file' = 1;
+            'function' = 1;
+            'variable' = 1;
+            'macro' = 1;
+            'type' = 1;
+	];
+     ];
+
+     9 = [
+	'label' = 'View MR';
+	'name' = 'mrtext';
+	'type' = 'mr';
+	'outmodes' = [];
+	'kinds' = [
+		'mr' = 1;
+	];
+     ];
+
+     10 = [
+	'label' = 'Files touched';
+	'name' = 'mrsfile';
+	'type' = 'mr';
+	'outmodes' = [
+		'graph mode' = 'graph';
+		'inplace mode' = 'graph';
+	];
+	'kinds' = [
+		'mr' = 1;
+	];
+     ];
+
+     11 = [
+	'label' = 'Groups containing';
+	'name' = 'mrsgrp';
+	'type' = 'mr';
+	'outmodes' = [
+		'graph mode' = 'graph';
+		'inplace mode' = 'graph';
+	];
+	'kinds' = [
+		'mr' = 1;
+	];
+     ];
+     12 = [
+	'label' = 'MRs included';
+	'name' = 'grpmrs';
+	'type' = 'mr';
+	'outmodes' = [
+		'graph mode' = 'graph';
+		'inplace mode' = 'graph';
+	];
+	'kinds' = [ 'mrgroup' = 1; ];
+     ];
+	
+     13 = [
+	'label' = 'Sablime srcpr';
+	'name' = 'srcprtext';
+	'type' = 'mr';
+	'outmodes' = [];
+	'kinds' = [ 'srcfile' = 1;];
+     ];
+
+     14 = [
+	'label' = 'File Versions';
+	'name' = 'filedeltas';
+	'type' = 'mr';
+	'outmodes' = [
+		'graph mode' = 'graph';
+		'inplace mode' = 'graph';
+	];
+	'kinds' = ['srcfile' =1;];
+     ];
+
+     15 = [
+	'label' = 'MRs touching';
+	'name' = 'filemrs';
+	'type' = 'mr';
+	'outmodes' = [
+		'graph mode' = 'graph';
+		'inplace mode' = 'graph';
+	];
+	'kinds' = ['srcfile' = 1;];
+     ];
+
+     16 = [
+	'label' = 'Retrieve Delta';
+	'name' = 'deltatext';
+	'type' = 'mr';
+	'outmodes' = [];
+	'kinds' = ['sccsfile' = 1;];
+     ];
+
+];

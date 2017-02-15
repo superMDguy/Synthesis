@@ -1,0 +1,850 @@
+#!/bin/perl
+
+sub brief
+{ local (*features, $target) = @_ ;
+  local (@words, $all, $num, $num1, $out, $out_lema, %word, %lema) ;
+  @marked_words = values %features ;
+  $all = join (' ', @marked_words) ;
+  $_ = $all ;
+  while (m!{([^&]*)&(\d+)/[^/]+/([^}]+)}!)
+   { $num = $2 ;
+     if ($num <= 9)
+      { $num = '0'.$num ; # for sorting keys %word
+        }
+     $word{$num} = $1 ;
+     $lema{$num} = $3 ;     
+     $_ = $' ;
+     }
+  $out = '' ;
+  $out_lema = '' ;
+  foreach $num (sort keys %word)
+   { $num1 = $num+0 ;    # remove leading zero if present
+     $out = $out .  $word{$num} . "($num1)" . '-' ;
+     $out_lema = $out_lema .  $lema{$num} . '-' ;     
+     }
+  chop ($out) ; # remove the last hyphen
+  chop ($out_lema) ; # remove the last hyphen
+  return ($out . '/@' . $target . '/' . $out_lema) ;
+  }
+
+sub quote
+{ local($fnd, $target) = @_ ;
+
+  local($out, $out_lema) ;
+
+  $out = '' ;
+  $out_lema = '' ;
+  $_ = $fnd ;
+  while (m!{([^&]*)&(\d+)/[^/]+/([^}]+)}!)
+   { $out = $out. $1 . "($2)" . '-' ;
+     $out_lema = $out_lema . $3 . '-' ;
+     $_ = $' ;
+     }
+  chop ($out) ; # remove the last hyphen
+  chop ($out_lema) ; # remove the last hyphen
+  return ($out . '/@' . $target . '/' . $out_lema) ;
+  }
+
+#
+# In order to make the patterns and the sentence as short as possible, patterns
+# already found (e.g., noun_mod) are marked by two letters. In debug prints
+# we resolve the pairs to the original rule name
+#
+sub resolve_marks
+{ local($in) = @_ ;
+
+  local($out, $mark) ;
+  $out = $in ;
+
+  foreach $mark (keys %marks)
+   { $out =~ s/<<$mark/<<$marks{$mark}/g ;
+     $out =~ s/<<\($mark/<<\($marks{$mark}/g ;
+     $out =~ s/<<\/$mark/<<\/$marks{$mark}/g ;
+     }
+  return($out) ;
+  }
+
+sentence:
+while (<>) {
+
+# if (/^#/) { next sentence } ;
+
+%all_feat = () ;
+
+#print "\ninput sentence: " . $_ . "\n" ;
+
+$wordnum = 0 ;
+
+$output = "" ;
+
+@words = split ;
+$_ = '{' . join ('}{', @words) . '}' ;
+
+while (m!{([^/]*)/!)
+ { $wordnum = $wordnum+1 ;
+   $output = $output . $` . '{' . $1 . "&$wordnum/" ;
+   $_ = $' ;
+   }
+
+$_ = $output . $_ if ($output) ;
+
+$all_out = "" ;
+
+#
+# original rule:     age       := $cd $duration_w $anypos $anylema {old/ $anypos $anylema
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bb"} = age ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CD/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:<<[^/][^>]*>>)*{(?:years|months|weeks|days|hours)&\d+/)(?:[^/]+/)(?:[^}]+}(?:<</[^>]+>>)*){old&\d+/(?:[^/]+/)(?:[^}]+}(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "bb" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     prop_noun_unit := $prop_noun_mod n1=$prop_noun ( $of_prep $dt ? 	$prop_noun_mod $prop_noun ) *
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bc"} = prop_noun_unit ;
+while (m!(?:(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{-/:&\d+/-}(?:<</[^>]+>>)*))?)*)((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))(?:(?:(?:<<[^/][^>]*>>)*{of&\d+/(?:IN/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:DT/)(?:[^}]+}(?:<</[^>]+>>)*))?(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{-/:&\d+/-}(?:<</[^>]+>>)*))?)*)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))*)!i)
+   { $num = $num+1 ;
+     $tar_num = "bc" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"n1\", \$1, 
+  )") ; 
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     paren_pn_unit := $open_paren $prop_noun_mod main=$prop_noun $close_paren
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bd"} = paren_pn_unit ;
+while (m!(?:(?:(?:<<[^/][^>]*>>)*{(?:&\d+/(?:[^/]+/)(?:}(?:<</[^>]+>>)*)(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{-/:&\d+/-}(?:<</[^>]+>>)*))?)*)((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))(?:(?:<<[^/][^>]*>>)*{)/(?:[^/]+/))}(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "bd" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"main\", \$1, 
+  )") ; 
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     ex_adj    :=  $adj | $vbn | $vbg | $age
+#
+$num = 0 ;
+$output = "" ;
+$marks{"be"} = ex_adj ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:J(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:VBN/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:VBG/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*(?:<<(bb\d+)>>.+<</\1>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "be" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     s_mod_list_1_adj := $adv_list ? main=$adj
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bf"} = s_mod_list_1_adj ;
+while (m!(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:RB(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:RB(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*)))*)?((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:J(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))))!i)
+   { $num = $num+1 ;
+     $tar_num = "bf" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"main\", \$1, 
+  )") ; 
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     s_mod_list_1 := $adv_list ? main=$ex_adj
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bg"} = s_mod_list_1 ;
+while (m!(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:RB(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:RB(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*)))*)?((?:(?:<<[^/][^>]*>>)*(?:<<(be\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)))!i)
+   { $num = $num+1 ;
+     $tar_num = "bg" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"main\", \$1, 
+  )") ; 
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     mod_list_adj := $noun_single * $s_mod_list_adj ( $noun + $s_mod_list ) *
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bh"} = mod_list_adj ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?[P]?/)(?:[^}]+}(?:<</[^>]+>>)*))*(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bf\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bg\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?)|(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\3>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\4>>)(?:<</[^>]+>>)*)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))?))*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))+(?:(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bg\d+)>>.+<</\5>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?)|(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\6>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\7>>)(?:<</[^>]+>>)*)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))?))+))*)!i)
+   { $num = $num+1 ;
+     $tar_num = "bh" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+if ($4) {
+$ref_feat_vec_name = "feats_$4" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $4
+if ($5) {
+$ref_feat_vec_name = "feats_$5" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $5
+if ($6) {
+$ref_feat_vec_name = "feats_$6" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $6
+if ($7) {
+$ref_feat_vec_name = "feats_$7" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $7
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     mod_list := $noun_single * $s_mod_list ( $noun + $s_mod_list ) *
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bi"} = mod_list ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?[P]?/)(?:[^}]+}(?:<</[^>]+>>)*))*(?:(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bg\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?)|(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\3>>)(?:<</[^>]+>>)*)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))?))+)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))+(?:(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bg\d+)>>.+<</\4>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?)|(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\5>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\6>>)(?:<</[^>]+>>)*)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))?))+))*)!i)
+   { $num = $num+1 ;
+     $tar_num = "bi" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+if ($4) {
+$ref_feat_vec_name = "feats_$4" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $4
+if ($5) {
+$ref_feat_vec_name = "feats_$5" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $5
+if ($6) {
+$ref_feat_vec_name = "feats_$6" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $6
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     noun_mod :=  ( $mod_list ? $noun_single ? $num_value $mod_list ?) |                    $mod_list
+#
+$num = 0 ;
+$output = "" ;
+$marks{"bj"} = noun_mod ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bi\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)?(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?[P]?/)(?:[^}]+}(?:<</[^>]+>>)*))?(?:(?:(?:<<[^/][^>]*>>)*{\$/\$&\d+/(?:[^}]+}(?:<</[^>]+>>)*))?(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CD/)(?:[^}]+}(?:<</[^>]+>>)*)))(?:(?:<<[^/][^>]*>>)*(?:<<(bi\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)|(?:(?:<<[^/][^>]*>>)*(?:<<(bi\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "bj" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     noun_mod_adj := ( $mod_list_adj ? $noun_single ? $num_value $mod_list ?) |                    $mod_list_adj
+#
+$num = 0 ;
+$output = "" ;
+$marks{"ca"} = noun_mod_adj ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bh\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)?(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?[P]?/)(?:[^}]+}(?:<</[^>]+>>)*))?(?:(?:(?:<<[^/][^>]*>>)*{\$/\$&\d+/(?:[^}]+}(?:<</[^>]+>>)*))?(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CD/)(?:[^}]+}(?:<</[^>]+>>)*)))(?:(?:<<[^/][^>]*>>)*(?:<<(bi\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)|(?:(?:<<[^/][^>]*>>)*(?:<<(bh\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "ca" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     n_bar := $noun_mod ? ( $noun ) * head=$noun
+#
+$num = 0 ;
+$output = "" ;
+$marks{"cb"} = n_bar ;
+while (m!(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bj\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)?(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))*((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))))!i)
+   { $num = $num+1 ;
+     $tar_num = "cb" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"head\", \$2, 
+  )") ; 
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     n_bar_adj := $noun_mod_adj  ( $noun ) * head=$noun
+#
+$num = 0 ;
+$output = "" ;
+$marks{"cc"} = n_bar_adj ;
+while (m!(?:(?:(?:<<[^/][^>]*>>)*(?:<<(ca\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))*((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))))!i)
+   { $num = $num+1 ;
+     $tar_num = "cc" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"head\", \$2, 
+  )") ; 
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pos_chn := $noun_mod ? ( $noun ) *        ( $noun $pos_h $noun * ) ? head=$noun
+#
+$num = 0 ;
+$output = "" ;
+$marks{"cd"} = pos_chn ;
+while (m!(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bj\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)?(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))*(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:POS/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CD/)(?:[^}]+}(?:<</[^>]+>>)*))*(?:(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bg\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?)|(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\3>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\4>>)(?:<</[^>]+>>)*)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))?))+)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))*)?((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))))!i)
+   { $num = $num+1 ;
+     $tar_num = "cd" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"head\", \$5, 
+  )") ; 
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+if ($4) {
+$ref_feat_vec_name = "feats_$4" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $4
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pos_chn_adj :=  $noun_mod_adj  ( $noun ) *        ( $noun $pos_h $noun * ) ? head=$noun
+#
+$num = 0 ;
+$output = "" ;
+$marks{"ce"} = pos_chn_adj ;
+while (m!(?:(?:(?:<<[^/][^>]*>>)*(?:<<(ca\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*)))*(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:POS/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CD/)(?:[^}]+}(?:<</[^>]+>>)*))*(?:(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bg\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*)))?)|(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\3>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\4>>)(?:<</[^>]+>>)*)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:CC/)(?:[^}]+}(?:<</[^>]+>>)*))?))+)?)(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))*)?((?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))))!i)
+   { $num = $num+1 ;
+     $tar_num = "ce" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"head\", \$5, 
+  )") ; 
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+if ($4) {
+$ref_feat_vec_name = "feats_$4" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $4
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pn_wdtp_not_be := $prop_noun_seq $comma $ex_wdt $ex_verb * v=$verb_not_be
+#
+$num = 0 ;
+$output = "" ;
+$marks{"cf"} = pn_wdtp_not_be ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:WDT/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:WP/)(?:[^}]+}(?:<</[^>]+>>)*)))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:V(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:MD/)(?:[^}]+}(?:<</[^>]+>>)*)))*())!i)
+   { $num = $num+1 ;
+     $tar_num = "cf" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+eval ("%$feat_vec_name  = (
+\"v\", \$3, 
+  )") ; 
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pn_wdtp_be_n := $prop_noun_seq $comma $ex_wdt $ex_verb * $be_verb $n_bar
+#
+$num = 0 ;
+$output = "" ;
+$marks{"cg"} = pn_wdtp_be_n ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:WDT/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:WP/)(?:[^}]+}(?:<</[^>]+>>)*)))(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:V(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:MD/)(?:[^}]+}(?:<</[^>]+>>)*)))*(?:(?:<<[^/][^>]*>>)*(?:<<(cb\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "cg" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pn_be_n := $prop_noun_seq $ex_verb * $be_verb $n_bar
+#
+$num = 0 ;
+$output = "" ;
+$marks{"ch"} = pn_be_n ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:V(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:MD/)(?:[^}]+}(?:<</[^>]+>>)*)))*(?:(?:<<[^/][^>]*>>)*(?:<<(cb\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "ch" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pn_dt_n := $prop_noun_seq $comma $dt ? $n_bar
+#
+$num = 0 ;
+$output = "" ;
+$marks{"ci"} = pn_dt_n ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:DT/)(?:[^}]+}(?:<</[^>]+>>)*))?(?:(?:<<[^/][^>]*>>)*(?:<<(cb\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "ci" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pn_ppd_n := $prop_noun_seq $ex_verb * $ppd $n_bar
+#
+$num = 0 ;
+$output = "" ;
+$marks{"cj"} = pn_ppd_n ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:V(?:[^/]*)/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:MD/)(?:[^}]+}(?:<</[^>]+>>)*)))*(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:PRP\$/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:<<[^/][^>]*>>)*(?:<<(cb\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "cj" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule:     pn_wpd_n := $prop_noun_seq $comma $wpd $n_bar
+#
+$num = 0 ;
+$output = "" ;
+$marks{"da"} = pn_wpd_n ;
+while (m!(?:(?:(?:(?:<<[^/][^>]*>>)*(?:<<(bc\d+)>>.+<</\1>>)(?:<</[^>]+>>)*)(?:(?:<<[^/][^>]*>>)*(?:<<(bd\d+)>>.+<</\2>>)(?:<</[^>]+>>)*)?)(?:(?:<<[^/][^>]*>>)*{,/,&\d+/(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:WP\$/)(?:[^}]+}(?:<</[^>]+>>)*))(?:(?:<<[^/][^>]*>>)*(?:<<(cb\d+)>>.+<</\3>>)(?:<</[^>]+>>)*))!i)
+   { $num = $num+1 ;
+     $tar_num = "da" . $num ;
+     $found = $& ; 
+     $replace = "<<$tar_num>>$found<</$tar_num>>" ;
+     $output = $output. $` . $replace ;
+     $newin = $' ;
+$feat_vec_name = "feats_" . $tar_num ;
+eval ("%$feat_vec_name  = ()") ;
+*feat_vec = eval ("*$feat_vec_name") ;
+if ($1) {
+$ref_feat_vec_name = "feats_$1" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $1
+if ($2) {
+$ref_feat_vec_name = "feats_$2" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $2
+if ($3) {
+$ref_feat_vec_name = "feats_$3" ;
+*ref_feat = eval("*$ref_feat_vec_name") ;
+foreach $feat (keys %ref_feat)
+ { if (! $feat_vec {"$feat"}) { $feat_vec {"$feat"} =  $ref_feat{"$feat"} } ;
+   }
+   } # $3
+     $_ = $newin ;
+     }
+$_ = $output . $_ if ($output) ;
+#
+# original rule: QUOTE:    n_seq  =  ( $noun_single ) * ( $noun | $prop_noun )
+#
+$num = 0 ;
+$orig_sent = $_ ;
+while (m!(?:(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?[P]?/)(?:[^}]+}(?:<</[^>]+>>)*)))*(?:(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:NN[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))|(?:(?:(?:<<[^/][^>]*>>)*{[^/]+&\d+/)(?:N[N]?P[S]?/)(?:[^}]+}(?:<</[^>]+>>)*))))!i)
+   { $num = $num+1 ;
+     $tar_num = "n_seq" . $num ;
+     $found = $& ; 
+     $newin = $' ;
+$qt = &quote($found, "n_seq") ; $all_out .= $qt . " " ;  
+     $_ = $newin ;
+     }
+$_ = $orig_sent ;
+
+if ($all_out) {
+print $all_out, "! "};
+}

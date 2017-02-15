@@ -1,0 +1,61 @@
+#!/bin/perl
+
+#
+# Add lemas to the output of Brill's tagger (cf. /u/ir2/Software/Brill_tagger) .
+#  
+# Input words and tags of the form 'word/tag' are converted to 'word/tag/lema' .
+#
+# Usage :
+#   morph-file < tagged-file > tagged-lema-file
+#
+# Environment variable MORPHDIR should point to the index and
+# exception files used by morph.subs . If it is undefined, they
+# are searched for in the directory /u/ir2/Software/morph/wordnet/corpus 
+#  (under DOS it searches the current directory).
+#
+
+$curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+unshift (@INC, $curdir) ;
+require 'morph.sub' ;
+
+$DEFAULT_POS = -999 ;
+%tag_to_pos = ( "^V", $VERB,
+	        "^N", $NOUN, 
+	        "^J", $ADJ,
+	        "^R", $ADV,
+	        "^", $DEFAULT_POS ) ; # the last pattern mathces anything
+	 
+
+while (<>) 
+ { @tagged_words = split ;
+   $#newline = $#tagged_words ;
+   $word_num = 0 ;
+   foreach $tagged_word (@tagged_words)
+    { ($word, $tag) = split ('/', $tagged_word) ;
+      foreach $tag_pat (keys(%tag_to_pos))
+       { if ($tag =~ /$tag_pat/)
+ 	  { $pos = $tag_to_pos{$tag_pat} ;
+#D            print STDERR "word=$word tag=$tag pos=$pos\n" ;
+	    # in the worst case, we get $DEFAULT_POS.
+	    last ;
+	    }
+         }
+      
+      if ($pos != $DEFAULT_POS)
+        { $lema = &morphstr($word, $pos) ;
+	  if ($lema eq NULL)
+	   { $lema = $word ;
+	     }
+	  }
+       else
+        { $lema = $word ;
+#D         print STDERR "part of speech not found for $tag\n" ;
+          }
+      $newline[$word_num] = $tagged_word . "/$lema" ;
+      $word_num = $word_num+1 ;
+      }
+   print join(' ', @newline),"\n" ;
+   }
+     
+     
+

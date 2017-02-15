@@ -1,0 +1,448 @@
+#
+# CIAO - graph views
+#
+# Implements the presentation of query results as graphs
+#
+ciao.gv = [];
+ciao.gv.init = function () {
+    local i, kid, mid, menu, values, n;
+
+    ciao.gv.vs = [];    # graph views array
+    for (kid in ciao.db.kindqueries)
+        ciao.gv.kindmenu[kid] = ciao.db.kindqueries[kid];
+    ciao.gv.kindmenu['none'] = [];
+    for (mid in ciao.gv.kindmenu) {
+        menu = ciao.gv.kindmenu[mid];
+        i = tablesize (menu);
+        menu[i] = 'set attr';
+        menu[i + 1] = 'print attr';
+        menu[i + 2] = 'delete';
+    }
+    values = ciao.db.entfields[ciao.db.revemap.kind].values;
+    n = tablesize (ciao.gv.kindmodemenu);
+    for (vid in values)
+        ciao.gv.kindmodemenu[n + vid] = values[vid];
+    ciao.gv.funcs = [
+        'leftdown' = ciao.gv.rightdown;
+        'rightdown' = ciao.gv.rightdown;
+        'keyup' = dotty.keyup;
+        'redraw' = dotty.redraw;
+    ];
+};
+#
+# run a query and display in new or existing window
+#
+ciao.gv.doquery = function (pview, pnode, modes, cmds, file, name) {
+    local shellcmd, cmdi, t, fd, canvas;
+
+#    echo ('running query: ', name);
+    if (modes.outmode ~= 'inplace mode')
+        t = ciao.gv.createview (pview, name, cmds, modes);
+    else
+        t = ciao.gv.vs[pview];
+    for (cmdi = 0; cmds[cmdi]; cmdi = cmdi + 1) {
+        if (cmds[cmdi].dir)
+            shellcmd = concat ('CIAODIR=', cmds[cmdi].dir, ' ');
+        else
+            shellcmd = "";
+        shellcmd = cmds[cmdi].cmd;
+        if ((fd = openio ('pipe', 'ksh', 'r', concat ("%e ", shellcmd))) == -1) {
+            echo ('command ', shellcmd, ' failed');
+            return;
+        }
+        monitor ('on', fd);
+        setwidgetattr (t.gcarray[cmdi], ['cursor' = 'watch';]);
+        ciao.queriespending[fd] = [
+            'fd' = fd;
+            'cmd' = shellcmd;
+            'gt' = t.gtarray[cmdi];
+            'name' = name;
+            'pnode' = pnode;
+        ];
+        if (modes.outmode == 'inplace mode')
+            ciao.queriespending[fd].inplace = 1;
+    }
+};
+#
+# create / destroy graph views
+#
+ciao.gv.createview = function (pview, name, cmds, modes) {
+    local gv, t, cmdi;
+    gv = ciao.gv;
+    t.modes = copy (modes);
+    t.cmds = cmds;
+
+# the X window
+    t.view = createwidget (-1, [
+        'type'   = 'view';
+        'name'   = name;
+        'origin' = ['x' = 0; 'y' = 0;];
+        'size'   = ciao.sizes.gview;
+    ]);
+
+# everything is inside a vertical list
+    t.areas = createwidget (t.view, [
+        'type' = 'array'; 'mode' = 'vertical';
+    ]);
+
+# action menus area
+    t.actions = createwidget (t.areas, [
+        'type' = 'array'; 'mode' = 'horizontal'; 'size' = ['x'= 500; 'y' = 25;];
+    ]);
+    t.general = createwidget (t.actions, [
+        'type' = 'label'; 'text' = 'general'; 'size' = ciao.sizes.label;
+    ]);
+    widgets[t.general].leftdown = gv.generaldomenu;
+    widgets[t.general].rightdown = gv.generaldomenu;
+    t.outmode = createwidget (t.actions, [
+        'type' = 'label'; 'text' = modes.outmode; 'size' = ciao.sizes.label;
+    ]);
+    widgets[t.outmode].leftdown = gv.outmodedomenu;
+    widgets[t.outmode].rightdown = gv.outmodedomenu;
+    t.dirmode = createwidget (t.actions, [
+        'type' = 'label'; 'text' = modes.dirmode; 'size' = ciao.sizes.label;
+    ]);
+    widgets[t.dirmode].leftdown = gv.dirmodedomenu;
+    widgets[t.dirmode].rightdown = gv.dirmodedomenu;
+    t.kindmode = createwidget (t.actions, [
+        'type' = 'label'; 'text' = modes.kindmode; 'size' = ciao.sizes.label;
+    ]);
+    widgets[t.kindmode].leftdown = gv.kindmodedomenu;
+    widgets[t.kindmode].rightdown = gv.kindmodedomenu;
+    t.help = createwidget (t.actions, [
+        'type' = 'label'; 'text' = 'help'; 'size' = ciao.sizes.label;
+    ]);
+    widgets[t.help].leftdown = gv.helpdomenu;
+    widgets[t.help].rightdown = gv.helpdomenu;
+    if (tablesize (cmds) > 1) {
+        t.graphs = createwidget (t.areas, [
+            'type' = 'array'; 'mode' = 'horizontal'; 'size' = ciao.sizes.graph;
+        ]);
+        for (cmdi = 0; cmds[cmdi]; cmdi = cmdi + 1) {
+            t.gcarray[cmdi] = dotty.createviewandgraph (null, "file", [
+                'parent' = t.graphs;
+                'funcs' = gv.funcs;
+            ]);
+            t.gsarray[cmdi] = widgets[t.gcarray[cmdi]].parent;
+            t.gtarray[cmdi] = dotty.graphs[dotty.views[t.gcarray[cmdi]].gtid];
+        }
+    } else {
+        t.gcarray[0] = dotty.createviewandgraph (null, "file", [
+            'parent' = t.areas;
+            'funcs' = gv.funcs;
+        ]);
+        t.gsarray[0] = widgets[t.gcarray[0]].parent;
+        t.gtarray[0] = dotty.graphs[dotty.views[t.gcarray[0]].gtid];
+        t.graphs = -1;
+    }
+
+# it's best to install the resize routines after all the widgets are set up
+    widgets[t.areas].resize = gv.areasresize;
+    widgets[t.actions].resize = gv.actionsresize;
+    if (t.graphs ~= -1)
+        widgets[t.graphs].resize = gv.graphsresize;
+
+# link t into the views array
+    gv.vs[t.view] = t;
+    gv.vs[t.areas] = t;
+    gv.vs[t.actions] = t;
+    gv.vs[t.general] = t;
+    gv.vs[t.outmode] = t;
+    gv.vs[t.dirmode] = t;
+    gv.vs[t.kindmode] = t;
+    gv.vs[t.help] = t;
+    if (t.graphs ~= -1)
+        gv.vs[t.graphs] = t;
+    for (cmdi = 0; cmds[cmdi]; cmdi = cmdi + 1) {
+        gv.vs[t.gcarray[cmdi]] = t;
+        gv.vs[t.gsarray[cmdi]] = t;
+    }
+
+# force a resize
+    setwidgetattr (t.gsarray[0], ['size' = ciao.sizes.graph;]);
+
+# link view as node in main graph
+    ciao.mv.ginsert (pview, t.view, name, cmds);
+
+    return t;
+};
+ciao.gv.popupview = function (widget) {
+    local cmdi, gv, t;
+    gv = ciao.gv;
+    t = gv.vs[widget];
+    setwidgetattr (t.view, ['zorder' = 'top';]);
+};
+ciao.gv.destroyview = function (widget) {
+    local gv, t, cmds, fd, gid, toremove;
+    gv = ciao.gv;
+    t = gv.vs[widget];
+    cmds = t.cmds;
+    for (fd in ciao.queriespending)
+        for (gid in t.gtarray)
+            if (ciao.queriespending[fd].gt == t.gtarray[gid]) {
+                monitor ('off', fd);
+                closeio (fd, 'kill');
+                toremove[fd] = fd;
+            }
+    for (fd in toremove)
+        remove (fd, ciao.queriespending);
+
+# unlink view as node in main graph
+    ciao.mv.gremove (t.view);
+
+# unlink t into the views array
+    remove (t.view, gv.vs);
+    remove (t.areas, gv.vs);
+    remove (t.actions, gv.vs);
+    remove (t.general, gv.vs);
+    remove (t.outmode, gv.vs);
+    remove (t.dirmode, gv.vs);
+    remove (t.kindmode, gv.vs);
+    remove (t.help, gv.vs);
+    if (t.graphs ~= -1)
+        remove (t.graphs, gv.vs);
+    for (cmdi = 0; cmds[cmdi]; cmdi = cmdi + 1) {
+        remove (t.gcarray[cmdi], gv.vs);
+        remove (t.gsarray[cmdi], gv.vs);
+    }
+
+# destroy widgets
+    for (cmdi = 0; cmds[cmdi]; cmdi = cmdi + 1) {
+        dotty.destroyview (dotty.views[t.gcarray[cmdi]]);
+        if (tablesize (t.gtarray[cmdi].views) == 0)
+            dotty.destroygraph (t.gtarray[cmdi]);
+    }
+    destroywidget (t.view);
+};
+ciao.gv.destroyallviews = function () {
+    local gv, vid;
+    gv = ciao.gv;
+    while (tablesize (gv.vs) > 0)
+        for (vid in gv.vs) {
+            ciao.gv.destroyview (vid);
+            break;
+        }
+};
+#
+# resize callbacks
+#
+ciao.gv.areasresize = function (data) {
+    local ws, ret;
+    ws = ciao.gv.vs[data.widget];
+    if (ws.graphs ~= -1)
+        ret = [
+            ws.actions = ['x' = data.size.x; 'y' = ciao.sizes.label.y;];
+            ws.graphs = [
+                'x' = data.size.x;
+                'y' = data.size.y - ciao.sizes.label.y;
+            ];
+        ];
+    else
+        ret = [
+            ws.actions = ['x' = data.size.x; 'y' = ciao.sizes.label.y;];
+            ws.gsarray[0] = [
+                'x' = data.size.x;
+                'y' = data.size.y - ciao.sizes.label.y;
+            ];
+        ];
+    return ret;
+};
+ciao.gv.actionsresize = function (data) {
+    local ws, x, y, ret;
+    ws = ciao.gv.vs[data.widget];
+    x = data.size.x / 5;
+    y = ciao.sizes.label.y;
+    ret = [
+        ws.general  = ['x' = x; 'y' = y;];
+        ws.outmode  = ['x' = x; 'y' = y;];
+        ws.dirmode  = ['x' = x; 'y' = y;];
+        ws.kindmode = ['x' = x; 'y' = y;];
+        ws.help     = ['x' = x; 'y' = y;];
+    ];
+    return ret;
+};
+ciao.gv.graphsresize = function (data) {
+    local ws, n, x, y, ret;
+    ws = ciao.gv.vs[data.widget];
+    n = tablesize (ws.cmds);
+    x = data.size.x / n;
+    y = data.size.y;
+    for (cmdi = 0; cmdi < n; cmdi = cmdi + 1)
+        ret[ws.gsarray[cmdi]] = ['x' = x; 'y' = y;];
+    return ret;
+};
+#
+# action callbacks
+#
+ciao.gv.generalmenu = [
+    0 = 'destroy view';
+    1 = 'main view entity query';
+    2 = 'main view relationship query';
+];
+ciao.gv.generaldomenu = function (data) {
+    local i, s, t;
+    if (~((i = displaymenu (data.widget, ciao.gv.generalmenu)) >= 0))
+        return;
+    s = ciao.gv.generalmenu[i];
+    t = ciao.gv.vs[data.widget];
+    if (s == "destroy view")
+        ciao.gv.destroyview (data.widget);
+    if (s == "main view entity query")
+	ciao.db.doquery (t.view, null, t.modes, "entity", ciao.mv.attr);
+    if (s == "main view relationship query")
+	ciao.db.doquery (t.view, null, t.modes, "relationship", ciao.mv.attr);
+};
+ciao.gv.outmodemenu = [
+    0 = 'text mode';
+    1 = 'graph mode';
+    2 = 'inplace mode';
+    3 = 'db mode';
+];
+ciao.gv.outmodedomenu = function (data) {
+    local i, s;
+    if (~((i = displaymenu (data.widget, ciao.gv.outmodemenu)) >= 0))
+        return;
+    s = ciao.gv.outmodemenu[i];
+    ciao.gv.setoutmode (data.widget, s);
+};
+ciao.gv.dirmodemenu = [
+    0 = 'fwd mode';
+    1 = 'bwd mode';
+];
+ciao.gv.dirmodedomenu = function (data) {
+    local i, s;
+    if (~((i = displaymenu (data.widget, ciao.gv.dirmodemenu)) >= 0))
+        return;
+    s = ciao.gv.dirmodemenu[i];
+    ciao.gv.setdirmode (data.widget, s);
+};
+# init () adds all the kinds in the following menu
+ciao.gv.kindmodemenu = [
+    0 = 'same kind';
+    1 = 'all kinds';
+];
+ciao.gv.kindmodedomenu = function (data) {
+    local i, s;
+    if (~((i = displaymenu (data.widget, ciao.gv.kindmodemenu)) >= 0))
+        return;
+    s = ciao.gv.kindmodemenu[i];
+    ciao.gv.setkindmode (data.widget, s);
+};
+ciao.gv.helpmenu = [
+    0 = 'read the manual';
+];
+ciao.gv.helpdomenu = function (data) {
+    local i;
+    i = displaymenu (data.widget, ciao.gv.helpmenu);
+    echo ('nothing to do');
+};
+#
+# operations
+#
+ciao.gv.setoutmode = function (widget, s) {
+    ciao.gv.vs[widget].modes.outmode = s;
+    setwidgetattr (widget, ['text' = s;]);
+};
+ciao.gv.setdirmode = function (widget, s) {
+    ciao.gv.vs[widget].modes.dirmode = s;
+    setwidgetattr (widget, ['text' = s;]);
+};
+ciao.gv.setkindmode = function (widget, s) {
+    ciao.gv.vs[widget].modes.kindmode = s;
+    setwidgetattr (widget, ['text' = s;]);
+};
+#
+# user interface
+#
+ciao.gv.globalmenu = [
+    0 = "do layout";
+    1 = "redraw";
+    2 = "load graph";
+    3 = "save graph";
+    4 = "zoom in";
+    5 = "zoom out";
+    6 = "find node";
+    7 = "destroy view";
+];
+ciao.gv.doglobalmenu = function (s, data) {
+    local vt, gt;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (s == "do layout")
+        dotty.layoutgraph (gt);
+    else if (s == "redraw")
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (s == "load graph")
+        dotty.loadgraph (gt, null, 'file');
+    else if (s == "save graph")
+        dotty.savegraph (gt, null, 'file');
+    else if (s == "zoom in")
+        dotty.zoom (vt, 0.5);
+    else if (s == "zoom out")
+        dotty.zoom (vt, 2);
+    else if (s == "find node")
+        dotty.findnode (vt, gt);
+    else if (s == "destroy view")
+        ciao.gv.destroyview (data.widget);
+    else
+        ciao.lang.doglobalmenu (s, data);
+};
+ciao.gv.dokindmenu = function (kind, s, data) {
+    local t, gt, kind2;
+    t = ciao.gv.vs[data.widget];
+    gt = dotty.graphs[dotty.views[data.widget].gtid];
+    if (s == "set attr")
+        dotty.setattr (gt, data.obj);
+    else if (s == "print attr") {
+        if (data.obj.nid >= 0)
+            echo ('node: ', data.obj.name);
+        dump (data.obj.attr);
+    } else if (s == "delete") {
+        if (data.obj.eid >= 0)
+            dotty.removeedge (gt, data.obj);
+        else
+            dotty.removenode (gt, data.obj);
+    } else {
+        if (t.modes.kindmode == 'all kinds')
+            kind2 = '-';
+        else if (t.modes.kindmode == 'same kind')
+            kind2 = kind;
+        else
+            kind2 = t.modes.kindmode;
+        ciao.db.doquery (t.view, data.obj, t.modes, s, [
+            'ent' = [
+                1 = [
+                    ciao.db.revemap['name'] = data.obj.attr.label;
+                    ciao.db.revemap['kind'] = kind;
+                    ciao.db.revemap['id'] = data.obj.name;
+		    ciao.db.revemap['file'] = data.obj.attr.file;
+                ];
+		
+                2 = [
+                    ciao.db.revemap['kind'] = kind2;
+                ];
+            ];
+        ]);
+    }
+};
+ciao.gv.rightdown = function (data) {
+    local i, kind, menu;
+    if (data.obj) {
+        if (~(data.obj.nid >= 0))
+            return;
+        kind = data.obj.attr.kind;
+        if (ciao.db.kindaliases[kind])
+            kind = ciao.db.kindaliases[kind];
+        if (~kind)
+            kind = 'none';
+        if (~(menu = ciao.gv.kindmenu[kind])) {
+            echo ('unknown kind: ', kind);
+            return;
+        }
+        if ((i = displaymenu (data.widget, menu)) >= 0)
+            ciao.gv.dokindmenu (kind, menu[i], data);
+    } else {
+        if ((i = displaymenu (data.widget, ciao.gv.globalmenu)) >= 0)
+            ciao.gv.doglobalmenu (ciao.gv.globalmenu[i], data);
+    }
+};

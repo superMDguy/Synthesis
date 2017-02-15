@@ -1,0 +1,96 @@
+.TH NEATO 1 "30 NOVEMBER 1991"
+.SH NAME
+neato \- preprocessor for drawing undirected graphs
+.SH SYNOPSIS
+.B neato
+[
+.B \-e\fIfloat\fP
+] [
+.B \-r
+] [
+.B \-Tpic
+] [
+.B \-v
+] [ files ]
+.SH DESCRIPTION
+.I neato
+is a program that draws undirected graphs.
+It creates a virtual physical model and runs a Newton-Raphson solver.
+The input graphs are described in the
+.I dot
+attributed graph language.
+By default, the output of
+.I neato
+is the input file with layout information appended.
+To make a PIC drawing, use the \fB\-Tpic\fP option.
+.PP
+Here is a brief synopsis of the graph language.
+.PP
+\fBgraph \fIname\fP { \fIstatement-list\fP }\fR is the top level graph.
+Statements may be:
+.PP
+\fIname\fB=\fIval\fB;\fR
+.br
+\fBnode [\fIname\fB=\fIval\fB];\fR
+.br
+\fBedge [\fIname\fB=\fIval\fB];\fR
+Set the default graph, node, or edge attribute \fIname\fP to \fIval\fP.
+Any subgraph, node, or edge specified after one of these statements
+inherits these attributes.
+.PP
+\fBn0 [\fIname0=val0,name1=val1,...\fB];\fR
+Creates node \fBn0\fP if it does not exist,
+and sets its attributes according to the optional list. 
+.PP
+\fBn0 \-\- n1 \-\- \fI...\fB \-\- nn [\fIname0=val0,name1=val1,...\fB];\fR
+Creates edges between nodes \fBn0\fP, \fBn1\fP, ..., \fBnn\fP and sets
+their attributes according to the optional list.
+Creates nodes as necessary.
+.PP
+\fBsubgraph \fIname\fB { \fIstatement-list \fB}\fR
+Creates a subgraph.  A subgraph may be used in place
+of \fBn0\fP, ..., \fBnn\fP in the statements above.
+The \fBsubgraph \fIname\fR part is optional. If it is
+missing, the subgraph is given an internally generated name.
+.PP
+The attribute names and values may be arbitrary strings.
+Certain attributes are recognized by \fIdot\fP when drawing
+the graph.  The following sections describe these special
+attributes and their legal values.
+.SH "GRAPH ATTRIBUTES"
+Refer to \fIdot\fP(1).  In addition, there are the following.
+.PP
+\fBstart=\fIval\fR.  Requests random initial placement and seeds
+the random number generator.  If \fIval\fP is not an integer,
+the process ID or current time is used as the seed.
+\fBepsilon=\fIn\fR.  Sets the termination threshold for the solver.
+The default is 0.1.
+.PP
+.SH "NODE ATTRIBUTES"
+Refer to \fIdot\fP(1).
+.SH "EDGE ATTRIBUTES"
+Refer to \fIdot\fP(1).  In addition, there are the following.
+.PP
+\fBw=\fIf\fR sets the weight (or spring constant) of an edge
+to some floating point value.  The default is 1.0; greater
+values make the edge tend more toward its optimal length.
+.PP
+\fBlen=\fIf\fR sets the desired edge length.  The default is 1.0.
+.SH "OPTIONS"
+The \fB\-v\fP option makes the solver print the energy
+of every 100th node moved.
+.SH "EXAMPLE"
+.nf
+\f5graph test123 {
+        a \-\- b \-\- c;
+        a \-\- {x y};
+        x \-\- c [w=10.0];
+        x \-\- y [w=5.0,len=3];
+}\fP
+.fi
+.SH "BUGS"
+Nodes may overlap, and edges may intersect unrelated nodes.
+.SH "SEE ALSO"
+.BR dot (1)
+.br
+S. C. North, "NEATO User's Manual," 59113-921014-14TM.

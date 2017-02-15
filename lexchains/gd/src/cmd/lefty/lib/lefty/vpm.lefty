@@ -1,0 +1,477 @@
+load ('dotty.lefty');
+vpm = ['batch' = []; 'online' = [];];
+load ('vpm.batch.lefty');
+load ('vpm.online.lefty');
+vpm.mode = 'batch';
+vpm.usecs = 'off';
+vpm.fname = 'vpm.data';
+vpm.clustid = 0;
+vpm.funcchains = [];
+vpm.init = function () {
+    dot.nodeattr['shape'] = 'box';
+    dot.nodeattr['width'] = '0.5';
+    vpm.funcs = [
+        'mount' = vpm.domount;
+        'fork' = vpm.dofork;
+        'exec' = vpm.doexec;
+        'exit' = vpm.doexit;
+        'open' = vpm.doopen;
+        'pipe' = vpm.dopipe;
+        'dup' = vpm.dodup;
+        'close' = vpm.doclose;
+        'read' = vpm.doread;
+        'write' = vpm.dowrite;
+    ];
+    dot.nodeattr.style = 'filled';
+};
+vpm.main = function (settings) {
+    local gt;
+# override settings
+    vpm.mode = settings.mode;
+    vpm.usecs = settings.usecs;
+    vpm.fname = settings.fname;
+    vpm.verbose = settings.verbose;
+
+    if (vpm.mode == 'batch')
+        vpm.batch.init ();
+    else
+        vpm.online.init ();
+    dotty.init ();
+    vpm.canvas = dotty.createviewandgraph (null, 'file', [
+        'name' = 'visual process manager';
+        'funcs' = vpm.uifuncs;
+    ]);
+    vpm.held = [];
+    vpm.released = [];
+};
+vpm.loadfile = function (name) {
+    if (~name)
+        name = ask ('file name');
+    if (~name)
+        return;
+    load (name);
+};
+vpm.appendfunc = function (name, new, num) {
+    if (~(vpm[name])) {
+        echo ("vpm: no such function ``", name, "''");
+        return;
+    }
+    for (i = 0; i < num; i = i + 1) {
+        if (i == 0)
+            s = "a0";
+        else
+            s = concat (s, ', a', i);
+    }
+    if (~vpm.funcchains[name]) {
+        vpm.funcchains[name][0] = vpm[name];
+        fs = concat (
+                'vpm["', name, '"] = function (', s, ') { ',
+                    'local i; ',
+                    'for (i = 0; vpm.funcchains["', name, '"][i]; i = i + 1) ',
+                        'vpm.funcchains["', name, '"][i] (', s, '); ',
+                '};');
+        run (fs);
+        n = 1;
+    } else {
+        n = tablesize (vpm.funcchains[name]);
+    }
+    vpm.funcchains[name][n] = new;
+};
+vpm.processentry = function (gt, entry) {
+    local held, rtn, func;
+    if (vpm.verbose)
+        echo (entry.full);
+    if (entry.typ ~= 'mount') {
+        if (~vpm.machids[entry.mid]) {
+            echo ('unknown machine id ', entry.mid);
+            return -1;
+        }
+        entry.mach = vpm.machs[vpm.machids[entry.mid]];
+        entry.mid = entry.mach.data.mid;
+        if (~(entry.proc = vpm.procs[entry.mid][entry.pid])) {
+            if (~(held = vpm.held[entry.mid][entry.pid])) {
+                if (vpm.verbose)
+                    echo ('holding ', entry.pid);
+                vpm.held[entry.mid][entry.pid][0] = entry;
+            } else
+                held[tablesize (held)] = entry;
+            return -1;
+        } else {
+            entry.proc.state = 0;
+            entry.proc.count = 0;
+        }
+    }
+    rtn = 1;
+    if ((func = vpm.funcs[entry.typ]))
+        rtn = func (gt, entry);
+    if (tablesize (vpm.released) > 0)
+        vpm.releaseprocs (gt);
+    return rtn;
+};
+vpm.releaseprocs = function (gt) {
+    local mid, mach, pid, t, entry, proc, eid, func;
+    if (vpm.verbose)
+        echo ('flushing released processes');
+    for (mid in vpm.released) {
+        mach = vpm.machs[vpm.machids[mid]];
+        for (pid in vpm.released[mid]) {
+            t[mid][pid] = 1;
+            entry = vpm.released[mid][pid][0];
+            if (entry.typ == 'fork')
+                eid = 1;
+            else
+                eid = 0;
+            if (~(proc = vpm.procs[mid][pid])) {
+                proc = vpm.createproc (gt, mid, pid, '?');
+                vpm.linkproc2mach (gt, proc, mach.data.mname);
+            }
+            for (; vpm.released[mid][pid][eid]; eid = eid + 1) {
+                entry = vpm.released[mid][pid][eid];
+                if (vpm.verbose)
+                    echo (entry.full);
+                entry.mach = mach;
+                entry.mid = mach.data.mid;
+                entry.proc = vpm.procs[mid][pid];
+                if ((func = vpm.funcs[entry.typ]))
+                    func (gt, entry);
+            }
+        }
+    }
+    for (mid in t) {
+        for (pid in t[mid])
+            remove (pid, vpm.released[mid]);
+        if (tablesize (vpm.released[mid]) == 0)
+            remove (mid, vpm.released);
+    }
+    if (vpm.verbose)
+        echo ('finished flushing');
+};
+#
+# visual system call interpretation
+#
+vpm.domount = function (gt, entry) {
+    local t, mach, proc;
+    t = split (entry.arg2, '"');
+    if (~(mach = vpm.machs[t[1]]))
+        mach = vpm.createmach (gt, t[1], entry.mid);
+    else {
+        vpm.machids[entry.mid] = mach.data.mname;
+        entry.mid = mach.data.mid;
+    }
+    if (~(proc = vpm.procs[entry.mid][entry.pid]))
+        proc = vpm.createproc (gt, entry.mid, entry.pid, '?');
+    vpm.linkproc2mach (gt, proc, mach.data.mname);
+    vpm.layoutgraph (gt);
+    return 1;
+};
+vpm.dofork = function (gt, entry) {
+    local parent, child, eid, edge;
+    if ((child = vpm.procs[entry.mid][entry.rtn]))
+        return -1;
+    if ((parent = vpm.procs[entry.mid][entry.pid])) {
+        child = vpm.createproc (gt, entry.mid, entry.rtn, parent.data.pname);
+        vpm.linkproc2proc (gt, child, parent);
+        for (eid in parent.edges) {
+            edge = parent.edges[eid];
+            if (edge.head.data.kind == 'file')
+                vpm.linkfile2proc (gt, edge.head, child,
+                        edge.data.fid, edge.attr.dir);
+        }
+        if (parent.data.mname)
+            vpm.linkproc2mach (gt, child, parent.data.mname);
+    } else
+        child = vpm.createproc (gt, entry.mid, entry.rtn, '?');
+    vpm.layoutgraph (gt);
+    if (vpm.held[entry.mid][entry.rtn]) {
+        if (vpm.verbose)
+            echo ('releasing ', entry.rtn);
+        vpm.released[entry.mid][entry.rtn] = vpm.held[entry.mid][entry.rtn];
+        remove (entry.rtn, vpm.held[entry.mid]);
+        if (tablesize (vpm.held[entry.mid]) == 0)
+            remove (entry.mid, vpm.held);
+    }
+    return 1;
+};
+vpm.doexec = function (gt, entry) {
+    vpm.renameproc (gt, entry.proc, entry.arg0);
+    return 1;
+};
+vpm.doexit = function (gt, entry) {
+    vpm.destroyproc (gt, entry.proc);
+    return 1;
+};
+vpm.doopen = function (gt, entry) {
+    local proc, t, t2, lname, rname, lport, rport, file, mode, dir;
+    lname = entry.mach.data.mname;
+    proc = entry.proc;
+    t = split (entry.arg0, '"');
+    t = split (t[1], '/');
+    if (t[1] == 'dev' & (t[2] == 'tcp' | t[2] == 'udp') & t[3]) {
+        rname = t[3];
+        if (rname == 'localhost')
+            rname = lname;
+        t2 = split (t[tablesize (t) - 1], '.');
+        if (tablesize (t2) == 1) { # un-connected socket
+            rport = 'none';
+            lport = t[4];
+        } else {
+            rport = t2[0];
+            lport = t2[1];
+        }
+        if (~(file = vpm.sockets[lname][rname][lport][rport]) &
+                ~(file = vpm.sockets[rname][lname][rport][lport]))
+            file = vpm.createsocket (gt, entry.mid, entry.rtn,
+                    lname, rname, lport, rport);
+        else
+            vpm.linksocket2socket (gt, file, entry.mid, entry.rtn);
+    } else if (t[1] == 'dev' & t[2] == 'pipe') {
+        if (~(file = vpm.files[entry.mid][entry.rtn]))
+            file = vpm.createpipe (gt, entry.mid, entry.rtn, '?');
+        vpm.linkfile2mach (gt, file, proc.data.mname);
+    } else {
+# FIX: remove file if it has other name
+        if (~(file = vpm.files[entry.mid][entry.rtn]))
+            file = vpm.createfile (gt, entry.mid, entry.rtn,
+                    t[tablesize (t) - 1]);
+    }
+    mode = toint (ston (entry.arg1));
+    if (mode % 2)
+        dir = 'forward';
+    else if ((mode / 2) % 2)
+        dir = 'both';
+    else
+        dir = 'back';
+    vpm.linkfile2proc (gt, file, proc, entry.rtn, dir);
+    vpm.layoutgraph (gt);
+    return 1;
+};
+vpm.dopipe = function (gt, entry) {
+    local proc, pipe;
+    proc = entry.proc;
+    if (~(pipe = vpm.files[entry.mid][entry.arg0]) &
+            ~(pipe = vpm.files[entry.mid][entry.arg1]))
+        pipe = vpm.createpipe (gt, entry.mid, entry.arg0, entry.arg1);
+    vpm.linkfile2mach (gt, pipe, proc.data.mname);
+    vpm.linkfile2proc (gt, pipe, proc, entry.arg0, 'back');
+    vpm.linkfile2proc (gt, pipe, proc, entry.arg1, 'forward');
+    vpm.layoutgraph (gt);
+    return 1;
+};
+vpm.dodup = function (gt, entry) {
+    local file, dir, eid, edge;
+    dir = 'both';
+    if (~(file = vpm.files[entry.mid][entry.rtn]))
+        file = vpm.createfile (gt, entry.mid, entry.rtn, '?');
+    for (eid in file.edges) {
+        edge = file.edges[eid];
+        if (edge.tail == entry.proc & edge.data.fid == entry.rtn) {
+            dir = edge.attr.dir;
+            break;
+        }
+    }
+    vpm.linkfile2proc (gt, file, entry.proc, entry.rtn, dir);
+    vpm.layoutgraph (gt);
+    return 1;
+};
+vpm.doclose = function (gt, entry) {
+    local file, eid, edge;
+    if (~(file = vpm.files[entry.mid][entry.arg0]))
+        return -1;
+    for (eid in file.edges) {
+        edge = file.edges[eid];
+        if (edge.tail == entry.proc & edge.data.fid == entry.arg0) {
+            vpm.unlinkfile (gt, edge);
+            return 1;
+        }
+    }
+    return -1;
+};
+vpm.doread = function (gt, entry) {
+    local file;
+    if (~(file = vpm.files[entry.mid][entry.arg0])) {
+        file = vpm.createfile (gt, entry.mid, entry.arg0, '?');
+        vpm.linkfile2proc (gt, file, entry.proc, entry.arg0, 'both');
+        vpm.layoutgraph (gt);
+        return 1;
+    }
+    return -1;
+};
+vpm.dowrite = vpm.doread;
+#
+# low level routines
+#
+vpm.createmach = function (gt, mname, mid) {
+    local mach, i;
+    mach = dot.insertsgraph (gt.graph, concat ('cluster', vpm.clustid), null);
+    vpm.clustid = vpm.clustid + 1;
+    mach.data.mid = mid;
+    mach.data.kind = 'mach';
+    mach.data.mname = mname;
+    vpm.machs[mname] = mach;
+    vpm.machids[mid] = mname;
+    mach.string = '';
+    if (vpm.mode == 'online') {
+        for (i = 0; i < 4; i = i + 1) {
+            mach.fd = openio ('cs', concat ('/dev/udp/', mname, '/pid'), 'r+');
+            echo ('cs connecting to pid on ', mname, ' fd = ', mach.fd);
+            if (mach.fd ~= -1) {
+                vpm.machfds[mach.fd] = mach;
+                monitor ('on', mach.fd);
+                break;
+            }
+        }
+    }
+    mach.graphattr.label = mname;
+    dotty.unpacksgraphattr (gt, mach);
+    vpm.drawsgraph (gt.views, mach);
+    return mach;
+};
+vpm.createproc = function (gt, mid, pid, pname) {
+    local proc, t, bname;
+    if (pname ~= '?') {
+        t = split (pname, '"');
+        pname = t[1];
+        t = split (pname, '/');
+        bname = t[tablesize (t) - 1];
+    } else
+        bname = '?';
+    proc = dot.insertnode (gt.graph, null, null);
+    proc.data.kind = 'proc';
+    proc.data.mid = mid;
+    proc.data.pid = pid;
+    proc.data.pname = pname;
+    proc.state = 0;
+    proc.count = 0;
+    vpm.procs[mid][pid] = proc;
+    proc.attr.label = concat (pid, '\n', bname);
+    proc.attr.color = 'lightblue';
+    dotty.unpacknodeattr (gt, proc);
+    vpm.drawnode (gt.views, proc);
+    return proc;
+};
+vpm.linkproc2mach = function (gt, proc, mname) {
+    vpm.machs[mname].nodes[proc.nid] = proc;
+    proc.data.mname = mname;
+};
+vpm.linkproc2proc = function (gt, child, parent) {
+    local edge;
+    edge = dot.insertedge (gt.graph, parent, null, child, null,
+            ['style' = 'dotted';]);
+    dotty.unpackedgeattr (gt, edge);
+    vpm.drawedge (gt.views, edge);
+};
+vpm.renameproc = function (gt, proc, pname) {
+    local t, bname;
+    if (pname ~= '?') {
+        t = split (pname, '"');
+        pname = t[1];
+        t = split (pname, '/');
+        bname = t[tablesize (t) - 1];
+    } else
+        bname = '?';
+    vpm.undrawnode (gt.views, proc);
+    proc.data.pname = pname;
+    proc.attr.label = concat (proc.data.pid, '\n', bname);
+    dotty.unpacknodeattr (gt, proc);
+    vpm.drawnode (gt.views, proc);
+};
+vpm.destroyproc = function (gt, proc) {
+    local list, eid, edge;
+    for (eid in proc.edges) {
+        edge = proc.edges[eid];
+        if (edge.head.data.kind == 'file')
+            list[eid] = edge;
+    }
+    for (eid in list)
+        vpm.unlinkfile (gt, list[eid]);
+    vpm.removenode (gt, proc);
+    remove (proc.data.pid, vpm.procs[proc.data.mid]);
+};
+vpm.createfile = function (gt, mid, fid, fname) {
+    local file;
+    file = dot.insertnode (gt.graph, null, null);
+    file.data.kind = 'file';
+    file.data.mids[mid][fid] = 1;
+    file.data.fname = fname;
+    vpm.files[mid][fid] = file;
+    file.attr.shape = 'ellipse';
+    file.attr.color = 'maroon1';
+    file.attr.label = fname;
+    dotty.unpacknodeattr (gt, file);
+    vpm.drawnode (gt.views, file);
+    return file;
+};
+vpm.createsocket = function (gt, mid, fid, lname, rname, lport, rport) {
+    local socket;
+    socket = dot.insertnode (gt.graph, null, null);
+    socket.data.kind = 'file';
+    socket.data.subkind = 'socket';
+    socket.data.mids[mid][fid] = 1;
+    socket.data.lname = lname;
+    socket.data.rname = rname;
+    socket.data.lport = lport;
+    socket.data.rport = rport;
+    vpm.files[mid][fid] = socket;
+    vpm.sockets[lname][rname][lport][rport] = socket;
+    vpm.sockets[rname][lname][rport][lport] = socket;
+    socket.attr.color = 'green';
+    socket.attr.shape = 'doublecircle';
+    socket.attr.fontsize = '7';
+    socket.attr.label = concat (rname, '\n', rport);
+    dotty.unpacknodeattr (gt, socket);
+    vpm.drawnode (gt.views, socket);
+    return socket;
+};
+vpm.linksocket2socket = function (gt, socket, mid, fid) {
+    vpm.files[mid][fid] = socket;
+    socket.data.mids[mid][fid] = 1;
+};
+vpm.createpipe = function (gt, mid, fid0, fid1) {
+    local pipe;
+    pipe = dot.insertnode (gt.graph, null, null);
+    pipe.data.kind = 'file';
+    pipe.data.subkind = 'pipe';
+    pipe.data.mids[mid][fid0] = 1;
+    pipe.data.mids[mid][fid1] = 1;
+    pipe.data.fname = 'pipe';
+    vpm.files[mid][fid0] = pipe;
+    vpm.files[mid][fid1] = pipe;
+    pipe.attr.color = 'yellow';
+    pipe.attr.shape = 'doublecircle';
+    pipe.attr.label = "";
+    dotty.unpacknodeattr (gt, pipe);
+    vpm.drawnode (gt.views, pipe);
+    return pipe;
+};
+vpm.linkfile2mach = function (gt, file, mname) {
+    vpm.machs[mname].nodes[file.nid] = file;
+    file.data.mname = mname;
+};
+vpm.linkfile2proc = function (gt, file, proc, fid, dir) {
+    local edge;
+    edge = dot.insertedge (gt.graph, proc, null, file, null, ['dir' = dir;]);
+    edge.data.fid = fid;
+    dotty.unpackedgeattr (gt, edge);
+    vpm.drawedge (gt.views, edge);
+};
+vpm.unlinkfile = function (gt, edge) {
+    if (tablesize (edge.head.edges) == 1)
+        vpm.destroyfile (gt, edge.head);
+    else
+        vpm.removeedge (gt, edge);
+};
+vpm.destroyfile = function (gt, file) {
+    local mid, fid, lname, rname, lport, rport;
+    for (mid in file.data.mids)
+        for (fid in file.data.mids[mid])
+            remove (fid, vpm.files[mid]);
+    if (file.data.subkind == 'socket') {
+        lname = file.data.lname;
+        rname = file.data.rname;
+        lport = file.data.lport;
+        rport = file.data.rport;
+        remove (rport, vpm.sockets[lname][rname][lport]);
+        remove (lport, vpm.sockets[rname][lname][rport]);
+    }
+    vpm.removenode (gt, file);
+};

@@ -1,0 +1,64 @@
+#
+# Miscellaneous definitions used in tokenize, sent-tok
+# and sent-tok-tag perls.
+#
+# before using 'require' to include it, use
+#  unshift (@inc , "directory-of-this-file")
+#
+#
+#  (C)  Ido Dagan and Yuval Krymolowski, IR lab, Bar Ilan University,
+#       Ramat Gan, Israel
+#
+
+$TRUE = 1 ;
+$FALSE = 0 ;
+
+#
+# For writing portable code (mostly file names)
+#
+$DOS = $FALSE ;
+$UNIX = $TRUE ;
+
+if ($DOS)
+ { # for temporary files
+   $tmp_dir = '.' ; 
+   }
+
+if ($UNIX)
+ { $curdir = $0; if (!($curdir =~ s/^(.*)\/[^\/]*$/\1/)) {$curdir = "."}
+   $tmp_dir = "/tmp" ;
+   @t = localtime ;
+#   $file_name_suffix = getlogin . '.t' . $t[2] .$t[1] . $t[0] ;
+   $file_name_suffix = "minasdfasdfasdf";
+   $main_dir = $curdir . "/../.." ;
+   $perl_dir = "$main_dir/tokenizer/perl" ;
+   $morph_dir = "$main_dir/morph/wordnet/perl" ;
+   # for the pipe to sgmlsent in $sent_tok_cmd
+   $sent_cmd = "$main_dir/sgmlsent/bin/sgmlsent" ;
+   # Perls invoked by system() call
+   $morph_cmd = "$morph_dir/morph-file" ;
+   $token_cmd = "$perl_dir/tokenize" ;
+   $sent_tok_cmd = "$perl_dir/sent-tok" ; 
+   $sent_tok_tag_cmd = "$perl_dir/sent-tok-tag" ; 
+   $tagger_dir = 
+    "$main_dir/tagger/Bin_and_Data" ;
+   }
+    
+$| = $TRUE ;
+
+
+# { $tmp_dir = "/tmp" ;
+#   @t = localtime ;
+#   $file_name_suffix = getlogin . '.t' . $t[2] .$t[1] . $t[0] ;
+#   $main_dir = "/users/white/masters/regina/lingtools" ;
+#   $perl_dir = "$main_dir/tokenizer/perl" ;
+#   $morph_dir = "$main_dir/morph/wordnet/perl" ;
+#   # for the pipe to sgmlsent in $sent_tok_cmd
+#   $sent_cmd = "$main_dir/sgmlsent/bin/sgmlsent" ;
+#   # Perls invoked by system() call
+#   $morph_cmd = "$morph_dir/morph-file" ;
+#   $token_cmd = "$perl_dir/tokenize" ;
+#   $sent_tok_cmd = "$perl_dir/sent-tok" ; 
+#   $sent_tok_tag_cmd = "$perl_dir/sent-tok-tag" ; 
+#   $tagger_dir = 
+#    "$main_dir/tagger/Bin_and_Data" ;

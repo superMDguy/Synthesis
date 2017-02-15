@@ -1,0 +1,14 @@
+:PACKAGE:ast
+
+
+graph 1.0 :LIBRARY: attribs.c graph.c node.c edge.c graphio.c lexer.c \
+	parser.y refstr.c trie.c
+
+$(INCLUDEDIR):INSTALLDIR: graph.h
+
+YACCFIX.parser = ag
+
+/*  triegen is a home-made tool.
+ *  trie.c : trie_input
+ *	    triegen  < trie_input > trie.c
+ */

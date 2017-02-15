@@ -1,0 +1,466 @@
+
+                            TCL GD 1.1.1 EXTENSION
+                                       
+   Thomas Boutell's Gd 1.1.1 package provides a convenient way to
+   generate GIF images with a C program. If you, like me, prefer Tcl for
+   CGI applications, you'll want my TCL GD extension. You can get it by
+   anonymous FTP from ftp://guraldi.hgp.med.umich.edu/pub/gdtcl.shar.
+   
+   Here's a quick overview of the package.
+     * Overview
+     * Credits and license terms
+     * Installation
+     * Reference
+     * Examples
+          + gdsample -- sample program written in Tcl.
+          + Gddemo -- demo program written in Tcl.
+          + gdshow -- procedure to display an image.
+     * Changes from version 1.1 to 1.1.1.
+     * Changes from version 1.0 to 1.1.
+    Spencer W. Thomas
+    Human Genome Center
+    University of Michigan
+    Ann Arbor, MI 48109
+    
+    spencer.thomas@med.umich.edu
+    
+   
+   
+Overview
+
+   
+   
+   This package provides a simple Tcl interface to the gd (GIF drawing)
+   package, version 1.1. It includes an interface to all the gd functions
+   and data structures from Tcl commands. Detailed documentation for GD
+   is available at the CSHL site. 
+   
+  CREDITS AND LICENSE TERMS
+  
+   
+   
+   Gdtcl is copyright, 1994, The Regents of the University of Michigan.
+   Permission is granted to copy and distribute this work provided that
+   this notice remains intact.
+   
+   gd 1.1 is copyright 1994, Quest Protein Database Center, Cold Spring
+   Harbor Labs. Permission granted to copy and distribute this work
+   provided that this notice remains intact. Credit for the library must
+   be given to the Quest Protein Database Center, Cold Spring Harbor
+   Labs, in all derived works. ("Derived works" includes all programs
+   that utilize the library. Credit must be given in user-visible
+   documentation.)
+   
+   If you wish to release modified versions of gd, please clear them
+   through Quest first by sending email to boutell@netcom.com; if this is
+   not done, any modified version of the gd library must be clearly
+   labeled as such.
+   
+   The Quest Protein Database Center is funded under Grant P41-RR02188 by
+   the National Institutes of Health.
+   
+   Written by Thomas Boutell, 2/94 - 11/94.
+   
+   The GIF compression and decompression is based on that found in the
+   pbmplus utilities, which in turn is based on GIFENCOD by David Rowley.
+   See the notice below:
+
+/*
+** Based on GIFENCOD by David Rowley .A
+** Lempel-Zim compression based on "compress".
+**
+** Modified by Marcel Wijkstra
+**
+** Copyright (C) 1989 by Jef Poskanzer.
+**
+** Permission to use, copy, modify, and distribute this software and its
+** documentation for any purpose and without fee is hereby granted, provided
+** that the above copyright notice appear in all copies and that both that
+** copyright notice and this permission notice appear in supporting
+** documentation.  This software is provided "as is" without express or
+** implied warranty.
+**
+** The Graphics Interchange Format(c) is the Copyright property of
+** CompuServe Incorporated.  GIF(sm) is a Service Mark property of
+** CompuServe Incorporated.
+*/
+
+   
+   
+Installation
+
+   
+   
+   Place gdCmd.c in your gd1.1 directory.
+   
+   If you have installed tclX, see below. Copy tclAppInit.c from the tcl
+   source directory, and add
+
+    Gdtcl_Init(interp);
+
+   right after
+
+    /*
+     * Call Tcl_CreateCommand for application-specific commands, if
+     * they weren't already created by the init procedures called above.
+     */
+
+   
+   
+   Then add these lines to the Makefile in the gd1.1 directory (modifying
+   TCL_DIR appropriately for your installation)
+
+TCL_DIR = /usr/hgp/tcl/tcl7.3
+TCL_INCLUDE = -I$(TCL_DIR)
+TCL_LIB = $(TCL_DIR)/libtcl.a
+CC = gcc
+
+CFLAGS = -g $(TCL_INCLUDE)
+
+gdtcl: tclAppInit.o gdCmd.o libgd.a
+        gcc -o gdtcl $(CFLAGS) tclAppInit.o gdCmd.o libgd.a $(TCL_LIB) -lm
+
+   
+   
+   Alternatively, you can modify tclAppInit.c in place, and add
+   references to the gd '.o' files into the tcl makefile (read the
+   instructions with the tcl distribution for details). 
+   
+  INSTALLING WITH TCLX
+  
+   If you have installed tclX, edit gdCmd.c and uncomment the line
+
+/* #define TCLX_SUPPORT */
+
+   The gd interface uses the Handles package from tclX, so you need tcl
+   and tclX. Copy tclXAppInit.c from the tclX/src directory, and add
+
+    Gdtcl_Init(interp);
+
+   right after
+
+    /*
+     * Call Tcl_CreateCommand for application-specific commands, if
+     * they weren't already created by the init procedures called above.
+     */
+
+   
+   
+   Then add these lines to the Makefile in the gd1.1 directory (modifying
+   TCL_DIR appropriately for your installation)
+
+TCL_DIR = /usr/hgp/tcl/tclX/7.3b
+TCL_INCLUDE = -I$(TCL_DIR)/include
+TCL_LIB = $(TCL_DIR)/lib/libtclx.a $(TCL_DIR)/lib/libtcl.a
+CC = gcc
+
+CFLAGS = -g $(TCL_INCLUDE)
+
+gdtcl: tclXAppInit.o gdCmd.o libgd.a
+        gcc -o gdtcl $(CFLAGS) tclXAppInit.o gdCmd.o libgd.a $(TCL_LIB) -lm
+
+   
+   
+   Alternatively, you can modify tclXAppInit.c in place, and add
+   references to the gd '.o' files into the tclX makefile (read the
+   instructions with the tclX distribution for details). 
+   
+Reference
+
+   
+   
+   One Tcl command, 'gd', is added. All gd package actions are
+   sub-commands (or "options" in Tcl terminology) of this command.
+   
+   Each active gd image is referred to with a "handle". The handle is a
+   name of the form gd# (e.g., gd0) returned by the gd create options.
+   
+   Almost all the gd commands take a handle as the first argument (after
+   the option). All the drawing commands take a color index as the next
+   argument. The color index is a number, or may be one of the strings
+   styled, brushed, tiled, "styled brushed" or "brushed styled". The
+   style, brush, or tile currently in effect will be used. Brushing and
+   styling apply to lines, tiling to filled areas.
+   
+   gd create <width> <height>
+          Return a handle to a new gdImage that is width X height.
+          
+   gd createFromGIF <filehandle>
+          
+   gd createFromGD <filehandle>
+          
+   gd createFromXBM <filehandle>
+          Return a handle to a new gdImage created by reading a GIF
+          (resp. GD or XBM) image from the file open on filehandle.
+          
+   gd destroy <gdhandle>
+          Destroy the gdImage referred to by gdhandle.
+          
+   gd writeGIF <gdhandle> <filehandle>
+          
+   gd writeGD <gdhandle> <filehandle>
+          Write the image in gdhandle to filehandle as a GIF (resp. GD)
+          file.
+          
+   gd interlace <gdhandle> <on-off>
+          Make the output image interlaced (if on-off is true) or not (if
+          on-off is false).
+          
+   gd color new <gdhandle> <red> <green> <blue>
+          Allocate a new color with the given RGB values. Return the
+          color index. Returns -1 on failure.
+          
+   gd color exact <gdhandle> <red> <green> <blue>
+          
+   gd color closest <gdhandle> <red> <green> <blue>
+          Find a color in the image that exactly matches (resp., is
+          closest to) the given RGB color. Returns the index (or -1 if no
+          exact match).
+          
+   gd color free <gdhandle> <index>
+          Free the color at the given index for reuse.
+          
+   gd color transparent <gdhandle> [<index>]
+          Mark the color index as the transparent background color. Or,
+          return the transparent color index if no index specified.
+          
+   gd color get <gdhandle> [<index>]
+          Return the RGB value at <index>, or {} if it is not allocated.
+          If <index> is not specified, return a list of {index R G B}
+          values for all allocated colors.
+          
+   gd brush <gdhandle> <brushhandle>
+          Set the brush image to be used for brushed lines. Transparent
+          pixels in the brush will not change the image when the brush is
+          applied.
+          
+   gd style <gdhandle> <index> ...
+          Set the line style to the list of color indices. This is
+          interpreted in one of two ways. For a simple styled line, each
+          color index is applied to points along the line in turn. The
+          transparent index value may be used to leave gaps in the line.
+          For a styled, brushed line, a 0 (or the transparent index)
+          means not to fill the pixel, and a non-zero value means to
+          apply the brush.
+          
+   gd tile <gdhandle> <tilehandle>
+          Set the tile image to be used for tiled fills. Transparent
+          pixels in the tile will not change the underlying image during
+          tiling.
+          
+   gd set <gdhandle> <index> <x> <y>
+          Set the pixel at (x,y) to index.
+          
+   gd line <gdhandle> <index> <x1> <y1> <x2> <y2>
+          
+   gd rectangle <gdhandle> <index> <x1> <y1> <x2> <y2>
+          
+   gd fillrectangle <gdhandle> <index> <x1> <y1> <x2> <y2>
+          Draw the outline of (resp. fill) a rectangle in color <index>
+          with corners at (x1,y1) and (x2,y2).
+          
+   gd arc <gdhandle> <index> <cx> <cy> <width> <height> <start> <end>
+
+   gd fillarc <gdhandle> <index> <cx> <cy> <width> <height> <start> <end>
+          Draw an arc, or filled segment, in index, centered at (cx,cy)
+	  in a rectangle width x height, starting at start degrees and
+	  ending at end degrees.  Start must be > end.
+          
+   gd polygon <gdhandle> <index> <x1> <y1> ...
+          
+   gd fillpolygon <gdhandle> <index> <x1> <y1> ...
+          Draw the outline of, or fill, a polygon specified by the x, y
+          coordinate list. There must be at least 3 points specified.
+          
+   gd fill <gdhandle> <index> <x> <y>
+          
+   gd fill <gdhandle> <index> <x> <y> <borderindex>
+          Fill with color index, starting from (x,y) within a region of
+          pixels all the color of the pixel at (x,y) (resp., within a
+          border colored borderindex).
+          
+   gd size <gdhandle>
+          Returns a list {width height} of the image.
+          
+   gd fonts
+          Returns a list of available fonts: {fontname width height}
+          
+   gd text <gdhandle> <fontname> <index> <x> <y> <string>
+          
+   gd textup <gdhandle> <fontname> <index> <x> <y> <string>
+          Draw text with font fontname, in color index, with upper left
+          corner at (x,y). textup draws text rotated 90 degrees, running
+          up.
+          
+   gd copy <desthandle> <srchandle> <destx> <desty> <srcx> <srcy> <w> <h>
+          
+   gd copy <desthandle> <srchandle> <destx> <desty> <srcx> <srcy> \
+          <destw> <desth> <srcw> <srch> Copy a subimage from
+          srchandle(srcx, srcy) to desthandle(destx, desty), size w x h.
+          Or, resize the subimage in copying from srcw x srch to destw x
+          desth.
+          
+   
+   
+Examples
+
+   The sample program from the gd documentation can be written thusly:
+
+################################################################
+# Sample gdtcl program
+#
+# Create a 64 x 64 image
+set im [gd create 64 64]
+
+# Get black and white as colors.  Black is the background color because
+# it is allocated first from a new image.
+
+set black [gd color new $im 0 0 0]
+set white [gd color new $im 255 255 255]
+
+# Draw a line from upper left to lower right
+gd line $im $white 0 0 63 63
+
+# Open a file for writing (Tcl on Unix, at least, doesn't support 'wb' mode)
+set out [open test.gif w]
+
+# Output the image to the disk file
+gd writeGIF $im $out
+
+# Close the file
+close $out
+
+# Destroy the image in memory
+gd destroy $im
+
+   
+   
+  GDDEMO
+  
+   Here's the gddemo.c program translated to tcl. You can even run it on
+   my machine.
+
+################################################################
+#
+# gddemo in tcl
+#
+
+# Create output image 128 x 128
+set im_out [gd create 128 128]
+
+# First color is background
+set white [gd color new $im_out 255 255 255]
+
+# Set transparent
+gd color transparent $im_out $white
+
+# Load demoin.gif and paste part of it into the output image.
+if {[catch {set in [open demoin.gif]}]} {
+  puts stderr "Can't load source image; this demo is much";
+  puts stderr "more impressive if demoin.gif is available";
+  set im_in "";
+} else {
+  set im_in [gd createFromGIF $in]
+  close $in
+  # Copy and shrink
+  gd copy $im_out $im_in 16 16 0 0 96 96 128 128
+}
+
+# Get some colors
+set red [gd color new $im_out 255 0 0]
+set green [gd color new $im_out 0 255 0]
+set blue [gd color new $im_out 0 0 255]
+
+# Draw a rectangle
+gd line $im_out $green 8 8 120 8
+gd line $im_out $green 120 8 120 120
+gd line $im_out $green 120 120 8 120
+gd line $im_out $green 8 120 8 8
+
+# Text
+gd text $im_out $red large 16 16 hi
+gd textup $im_out $red small 23 23 hi
+
+# Circle
+gd arc $im_out $blue 64 64 30 10 0 360
+
+# Arc
+gd arc $im_out $blue 64 64 20 20 45 135
+
+# Flood fill
+gd fill $im_out $blue 4 4
+
+# Polygon
+gd fillpolygon $im_out $green 32 0 0 64 64 64
+
+# Brush. A fairly wild example also involving a line style!
+if {$im_in != ""} {
+  set brush [gd create 8 8];
+  eval [concat gd copy $brush $im_in 0 0 0 0 [gd size $brush] [gd size $im_in]]
+  gd brush $im_out $brush
+
+  # Style so they won't overprint each other.
+  gd style $im_out [concat [replicate "0 " 7] 1]
+  gd line $im_out "styled brushed" 0 0 128 128
+}
+
+# Interlace the result for "fade in" in viewers that support it
+gd interlace $im_out true
+
+# Write GIF
+set out [open demoout.gif w]
+gd writeGIF $im_out $out
+close $out
+gd destroy $im_out
+
+   
+   
+  GDSHOW
+  
+   A quick Tcl procedure to display a GD image using the xv program.
+
+################################################################
+# gdshow -- use xv to display an image.
+#
+# Waits until xv quits to return.
+#
+proc gdshow {gd} {
+  set f [open "|xv -" w]
+  catch {gd writeGIF $gd $f}
+  catch {close $f} xx
+  if {$xx != {}} {
+    error "XV error: $xx"
+  }
+}
+
+   
+   
+Changes from Version 1.1 to 1.1.1
+
+   
+   
+   The major change in this release is that you can now install the
+   extension without tclX. I've written emulation functions for the tclX
+   "handle" routines that the extension uses. If you do have tclX, be
+   sure to see the installation instructions above.
+   
+   It's also updated to remain compatible with the changes in gd 1.1.1. 
+   
+Changes from Version 1.0 to 1.1
+
+   Most of the changes involve adding new functionality to support the
+   new functionality in gd1.1. These are:
+     * The polygon and fillpolygon commands,
+     * The style, brush, and tile commands,
+     * Addition of brushed, styled, and tiled "colors," and
+     * The interlace command.
+       
+   
+   
+   The dash command has been deleted, as this functionality is now
+   available through the use of line styles.
+     _________________________________________________________________
+   
+    Spencer W. Thomas -- Spencer.W.Thomas@med.umich.edu
+    
+    This page last changed on 9 February, 1995.

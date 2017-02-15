@@ -1,0 +1,128 @@
+<DOC>
+<DOCID>08 770 566.
+</DOCID>
+<JOURNAL>Government Computer News  August 20 1990 v9 n17 p1(2)
+* Full Text COPYRIGHT Ziff-Davis Publishing Co. 1990.
+</JOURNAL>
+<TITLE>Desktop III 386: worth waiting for. (Hardware Review) (Unisys
+Corp. Personal Workstation2 microcomputers supplied under
+government Desktop III contract) (evaluation)
+</TITLE>
+<AUTHOR>Morgan, Cynthia.
+</AUTHOR>
+<SUMMARY>Unisys Corp's Personal Workstation2 800/20C, the powerful
+80386-based microcomputer sold to Defense Department offices under
+the Desktop III contract, offers strong performance and is well
+designed.  Its 20 MHz 386 processor performs 4.7 million
+instructions per second.  The machine is ergonomically attractive,
+with a crisp display, good mouse/eye coordination and an excellent
+keyboard feel.  Two configurations are available under the
+contract: a 16 MHz 'Basic' model that comes with 2Mbytes of RAM
+and sells for only $1,250, and an 'advanced' 20 MHz unit with
+4Mbytes of RAM expandable to 25Mbytes.  The advanced unit sells
+for $2,767 configured with 8Mbytes of RAM, a math coprocessor,
+large disk and tape drives, two floppy drives, a mouse and a
+14-inch VGA display.  It is bulky, and the 3.5-inch diskette drive
+sometimes refused to read disks formatted on other machines.  The
+Personal Workstation2 is nevertheless an outstanding value.
+</SUMMARY>
+<DESCRIPTORS>
+Company:   Unisys Corp. (products).
+Ticker:    UIS.
+Product:   Unisys Personal Workstation2 800/20C (Microcomputer).
+Topic:     Microcomputers
+Defense Contracts
+Evaluation.
+Feature:   illustration
+photograph.
+</DESCRIPTORS>
+<TEXT>
+
+Desktop III 386: Worth Waiting For
+
+The 20-MHz Unisys Corp. Desktop III 386 combines robust performance,
+thoughtful engineering and incredible value into one rather bulky package.
+
+After spending a few hours with one I can say it definitely is worth the two-
+to three-month wait it takes to get one.
+
+I examined both basic and advanced configurations available under the Defense
+Department's Desktop III contract.  Other than a finicky 3-1/2-inch floppy
+drive, I could find little to criticize in this machine and quite a lot that
+was praiseworthy.
+
+Unisys has not supplied GCN with a Desktop III review computer, after several
+requests.  The Army's General Purpose Computer Support Center in Falls
+Church, Va., graciously let me spend an afternoon with four Desktop III
+computers the center uses for its own evaluations.
+
+Performancewise, the 20-MHz Advanced Workstation stacked up very well,
+operating about on par with a Compaq Computer Corp. 386/20e.  Norton
+Utilities' SYSINFO reported its computing speed was 24.3 times that of an IBM
+XT and almost three times that of the Zenith Data Systems Corp. Z-248 286
+sold under Desktop II.
+
+PowerMeter 1.4 rated this computer at 4.7 million instructions per second,
+about what some inexpensive 25-MHz 386 clones will give.  It rated the Z-248
+at 1.3 MIPS.
+
+A complex Lotus 1-2-3 macro that tests CPU and RAM ran in slightly less than
+10 seconds, about a quarter of the time it needs on the Z-248.
+
+Ergonomically, the computer is a pleasure to use.  The display is crisp and
+easy to read, with good mouse/eye coordination.  The sculpted curve of the
+keyboard is a bit deeper than most, but has a very nice feel.
+
+Two machines are on the contract.  The Basic unit has a 16-MHz 386 processor
+and 2M RAM.  It sells for $668 without monitor or hard drive.  Although a
+16-MHz starter system complete with VGA display, 40M hard drive and two
+floppies is a steal at less than $1,250, I would spend the extra $229 for its
+big brother.
+
+The advanced 20-MHz 386 CPU with 4M expandable to 24M is $905.  The starter
+system setup with the 20-MHz CPU and the 2M RAM bonus is only $1,479.
+
+I spent most of my time with the 20-MHz model.  It came with 8M RAM on the
+motherboard; math co-processor; 340M internal hard drive; 3-1/2-inch, 1.44M
+floppy drive; 5 1/4-inch, 360K internal floppy; 320M external tape backup;
+14-inch VGA monitor and card; mouse and MS-DOS 4.01.  A Defense Department
+office pays $2,767 for this system, not counting applications software, other
+peripherals such as printers, and extended maintenance contracts.
+
+No one could call it a trim machine.  The main CPU enclosure measures 6.3
+inches high by 20.9 inches wide by 16.5 inches deep.  It weighs nearly 40
+pounds.
+
+Both machines come with a Small Computer Systems Interface board plugged into
+one of the 16-bit expansion slots.  This board, which controls the disk
+drives, is the source of the recent furor over networking these computers.
+Some local area network operating systems such as Novell Inc.'s Netware
+refuse to recognize hard drives controlled by this board when trying to set
+up the machines as servers.
+
+Future ROM chips and drivers will correct the problem.
+
+That brings me to the only real problem I had with this computer -- the
+3-1/2-inch A: drive that comes standard.
+
+Some of my test software was on high-density diskettes formatted as
+low-density.  A Compaq 386/25, a 386C from AST Research Inc., a T1200 laptop
+from Toshiba America Inc., and a Wang Laboratories Inc. PS/2 clone read them
+perfectly.  The Desktop III machine could not.
+
+I tried them again in a Lapheld contract's Zenith Z-184 laptop.  No problems.
+I tried a brand-new, unformatted, high-density diskette from Unisys,
+formatted as low-density in the laptop.  Again, the Desktop III computer
+refused to read it.  The PW2 always read its own diskettes perfectly.  Some
+drives are less tolerant than others.
+
+This is not necessarily a flaw, although I would have preferred a less picky
+drive.  But be careful to format diskettes for their correct density levels
+on other computers if they need to go in Desktop III machines.
+
+If Unisys can continue to supply machines like the ones I saw, the Defense
+Department has just bought itself a winner.
+
+Cynthia Morgan is CGN's associate editor for micro products and reviews.
+</TEXT>
+</DOC>

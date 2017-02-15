@@ -1,0 +1,39 @@
+#!tcldot
+
+# Usage: gdtest <file.dot>
+#
+# This script demonstrates the use of additional gd commands 
+
+# find a dot file
+if {[llength $argv] != 2} {
+    puts "Error: Should specify just input & output file."; exit
+}
+ 
+# read data.
+if {[catch {open [lindex $argv 0] r} f]} {puts "unable to open dot file"; exit}
+set g [dotread $f]
+close $f
+
+# layout the graph (generate positional information)
+$g layout
+
+# find out actual size of graph
+scan [$g queryattr bb] "{%dp %dp %dp %dp}" ulx uly lrx lry
+
+# create image
+set gd [gd create $lrx $lry]
+
+# set some colors
+set transparent [gd color new $gd 254 254 254]
+gd color transparent $gd $transparent
+set black [gd color new $gd 0 0 0]
+set blue [gd color new $gd 128 128 255]
+
+# render graph
+$g rendergd $gd
+
+# write to output file
+if {[catch {open [lindex $argv 1] w} f]} {
+    puts "unable to open dotoutput file"; exit}
+gd writeGIF $gd $f
+close $f

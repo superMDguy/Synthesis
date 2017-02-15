@@ -1,0 +1,238 @@
+.TH DOT 1 "2 August 1993" \*(eX
+.SH NAME
+dot \- preprocessor for drawing directed graphs
+.SH SYNOPSIS
+\fBdot\fR [\fB\-G\fIname=value\fR]
+[\fB\-N\fIname=value\fR]
+[\-E\fIname=value\fR]
+[\fB\-T\fIlang\fR]
+[\fB\-l \fIlibfile\fR]
+[\fB\-o \fIoutfile\fR]
+[files]
+.SH DESCRIPTION
+.I dot
+draws directed graphs.  It works well on DAGs and other graphs
+that can be drawn as hierarchies.
+It reads attributed graph files and writes drawings.
+By default, the output format
+.I dot
+is the input file with layout coordinates appended.
+To generate PostScript, use the \fB\-Tps\fP option.
+Other choices are \fB-Tmif\fP (FrameMaker graphics),
+\fB-Thpgl\fP (HP pen plotters), and \fB-Tpcl\fP (Laserjet printers).
+.PP
+Here is a synopsis of the graph file language.
+.PP
+\fBdigraph \fIname\fP { \fIstatement-list\fP }\fR is the top level graph.
+Statements may be:
+.PP
+\fIname\fB=\fIval\fB;\fR
+.br
+\fBnode [\fIname\fB=\fIval\fB];\fR
+.br
+\fBedge [\fIname\fB=\fIval\fB];\fR
+Set default graph, node, or edge attribute \fIname\fP to \fIval\fP.
+Any subgraph, node, or edge appearing after this inherits the new
+default attributes.
+.PP
+\fBn0 [\fIname0=val0,name1=val1,...\fB];\fR
+Creates node \fBn0\fP (if it does not already exist)
+and sets its attributes according to the optional list. 
+.PP
+\fBn0 \-> n1 \-> \fI...\fB \-> nn [\fIname0=val0,name1=val1,...\fB];\fR
+Creates edges between nodes \fBn0\fP, \fBn1\fP, ..., \fBnn\fP and sets
+their attributes according to the optional list.
+Creates nodes as necessary.
+.PP
+\fBsubgraph \fIname\fB { \fIstatement-list \fB}\fR
+Creates a subgraph.  Subgraphs may be used in place
+of \fBn0\fP, ..., \fBnn\fP in the above statements to create edges.
+\fBsubgraph \fIname\fR is optional;
+if missing, the subgraph is assigned an internal name. 
+.PP
+Attribute names and values are ordinary (C-style) strings.
+The following sections describe attributes that control graph layout.
+.SH "GRAPH ATTRIBUTES"
+.PP
+\fBsize="\fIx,y\fP"\fR sets bounding box of drawing in inches.
+.PP
+\fBpage="\fIx,y\fP"\fR sets the PostScript pagination unit.
+.PP
+\fBratio=\fIf\fR sets the aspect ratio to \fIf\fP which may be
+a floating point number, or one of the keywords \fBfill\fP,
+\fBcompress\fP, or \fBauto\fP.
+.PP
+\fBmargin=\fIf\fR sets the page margin (included in the page size).
+.PP
+\fBnodesep=\fIf\fR sets the minimum separation between nodes.
+.PP
+\fBranksep=\fIf\fR sets the minimum separation between ranks.
+.PP
+\fBordering=out\fR constrains order of out-edges in a subgraph
+according to their file sequence.
+.PP
+\fBrankdir=LR\fR requests a left-to-right drawing.
+.PP
+\fBpagedir=\fR[TBLR][TBLR] sets the major and minor order of pagination.
+.PP
+\fBrank=same\fR (or \fBmin\fP or \fBmax\fP) in a subgraph
+constrains the rank assignment of its nodes.   If a subgraph's
+name has the prefix \fBcluster\fP, its nodes are drawn in
+a distinct rectangle of the layout.  Clusters may be nested.
+.PP
+\fBrotate=90\fR sets landscape mode. 
+(\fBorientation=land\fR is backward compatible but obsolete.)
+.PP
+\fBcenter=\fIn\fR a non-zero value centers the drawing on the page.
+.PP
+\fBnslimit=\fIf\fR or \fBmclimit=\fIf\fR adjusts the bound on the
+number of network simplex or mincross iterations by the given ratio.
+.SH "NODE ATTRIBUTES"
+\fBheight=\fId\fR or \fBwidth=\fId\fR sets minimum height or width.
+.PP
+\fBshape=record polygon \fIbuiltin_polygon\fR
+.br
+\fIbuiltin_polygon\fR is one of: \fBplaintext ellipse circle egg 
+triangle box diamond trapezium parallelogram house hexagon octagon.\fR
+(Polygons are defined or modified by the following node attributes:
+\fBregular\fR, \fBperipheries\fR, \fBsides\fR, \fBorientation\fR,
+\fBdistortion\fR and \fBskew\fR.)
+.PP
+\fBlabel=\fItext\fR where \fItext\fP may include escaped newlines
+\\\|n, \\\|l, or \\\|r for center, left, and right justified lines.
+Record labels may contain recursive box lists delimited by { | }.
+Port identifiers in labels are set off by angle brackets < >.
+In the graph file, use colon (such as, \fBnode0:port28\fR).
+.PP
+\fBfontsize=\fIn\fR sets the label type size to \fIn\fP points.
+.PP
+\fBfontname=\fIname\fR sets the label font family name.
+.PP
+\fBcolor=\fIcolorvalue\fR sets the node color.
+.PP
+\fBfontcolor=\fIcolorvalue\fR sets the label text color.
+.PP
+A \fIcolorvalue\fP may be "\fIh,s,v\fB"\fR (hue, saturation, brightness)
+floating point numbers between 0 and 1, or an X11 color name such as
+\fBwhite black red green blue yellow magenta cyan\fR or \fBburlywood\fR.
+.PP
+\fBstyle=filled solid dashed dotted bold invis\fP
+.PP
+The following attributes apply only to polygon shape nodes:
+.PP
+\fBregular=\fIn\fR if \fIn\fR is non-zero then the polygon is made 
+regular, i.e. symmetric about the x and y axis, otherwise the
+polygon takes on the aspect ratio of the label. 
+\fIbuiltin_polygons\fR that are not already regular are made regular
+by this attribute.
+\fIbuiltin_polygons\fR that are already regular are not affected (i.e.
+they cannot be made asymmetric).
+.PP
+\fBperipheries=\fIn\fR sets the number of periphery lines drawn around
+the polygon.  This value supercedes the number of periphery lines
+of \fIbuiltin_polygons\fR.
+.PP
+\fBsides=\fIn\fR sets the number of sides to the polygon. \fIn\fR<3
+results in an ellipse.
+This attribute is ignored by \fIbuiltin_polygons\fR.
+.PP
+\fBorientation=\fIf\fR sets the orientation of the first apex of the
+polygon counterclockwise from the vertical, in degrees.
+\fIf\fR may be a floating point number.
+The orientation of labels is not affected by this attribute.
+This attribute is added to the initial orientation of \fIbuiltin_polygons.\fR
+.PP
+\fBdistortion=\fIf\fR sets the amount of broadening of the top and
+narrowing of the bottom of the polygon (relative to its orientation). 
+Floating point values between -1 and +1 are suggested.
+This attribute is ignored by \fIbuiltin_polygons\fR.
+.PP                                                            
+\fBskew=\fIf\fR sets the amount of right-displacement of the top and
+left-displacement of the bottom of the polygon (relative to its
+orientation).
+Floating point values between -1 and +1 are suggested.
+This attribute is ignored by \fIbuiltin_polygons\fR.
+.SH "EDGE ATTRIBUTES"
+\fBminlen=\fIn\fR where \fIn\fP is an integer factor that applies
+to the edge length (ranks for normal edges, or minimum node separation
+for flat edges).
+.PP
+\fBweight=\fIn\fR where \fIn\fP is the integer cost of the edge.
+Values greater than 1 tend to shorten the edge.  Weight 0 flat
+edges are ignored for ordering nodes.
+.PP
+\fBlabel=\fItext\fR where \fItext\fR may include escaped newlines
+\\\|n, \\\|l, or \\\|r for centered, left, or right justified lines.
+.PP
+\fBfontsize=\fIn\fR sets the label type size to \fIn\fP points.
+.PP
+\fBfontname=\fIname\fR sets the label font family name.
+.PP
+\fBfontcolor=\fIcolorvalue\fR sets the label text color.
+.PP
+\fBstyle=solid dashed dotted bold invis\fP
+.PP
+\fBcolor=\fIcolorvalue\fR sets the line color for edges.
+.PP
+\fBdir=forward back both none\fP controls arrowheads.
+.SH "OPTIONS"
+\fB\-G\fP sets a default graph attribute.
+\fB\-N\fP and \fB\-E\fP set default attributes for nodes and edges.
+Some examples: \fB\-Gsize="7,8"\fP or \fB\-Nshape=box\fP or \fB\-Efontsize=8\fP.
+.PP
+\fB\-l\fIfile\fR loads custom PostScript library files.
+Usually these define custom shapes or styles.
+If \fB-l\fP is given by itself, the standard library is omitted.
+.PP
+\fB\-T\fIlang\fR sets the output language as described above.
+.SH "EXAMPLE"
+.br
+digraph test123 {
+.br
+        a \-> b \-> c;
+.br
+        a \-> {x y};
+.br
+        b [shape=box];
+.br
+        c [label="hello\\\|nworld",color=blue,fontsize=24,
+.br
+             fontname="Palatino-Italic",fontcolor=red,style=filled];
+.br
+        a \-> z [label="hi", weight=100];
+.br
+        x \-> z [label="multi-line\\\|nlabel"];
+.br
+        edge [style=dashed,color=red];
+.br
+        b \-> x;
+.br
+        {rank=same; b x}
+.br
+}
+.br
+.SH "BUGS"
+Edge splines can overlap unintentionally.
+.PP
+Layout of flat edges with labels is not fully implemented.
+.PP
+.SH "SEE ALSO"
+.PP
+dotty(1)
+.br
+neato(1)
+.br
+xcolors(1)
+.br
+libgraph(3)
+.PP
+E. R. Gansner, S. C. North,  K. P. Vo, "DAG \(em A Graph Drawing Program,"
+59554-871019-04TM.
+.br
+E. R. Gansner, S. C. North,  K. P. Vo, "A Technique for Drawing Directed Graphs,"
+.br
+  59113-910625-07TM.
+.br
+E. Koutsofios and S. C. North, "Drawing Graphs with dot," 59113-910904-08TM.
+Available on ftp.zoo.att.com in outgoing/dotguide.ps.Z.
+.br

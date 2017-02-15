@@ -1,0 +1,45 @@
+.ce
+NONEXCLUSIVE SOURCE CODE LICENSE
+.sp
+Accepting this nonexclusive license from AT&T Corp. 
+will permit you to download a single copy of certain source code,
+including documentation, and to use the source code
+solely in accordance with the following terms and conditions:
+.AL 1
+.LI
+You may modify the source code to make source code derivative works
+and may compile the source code or the source code derivative works
+to make object code derivative works.
+.LI
+You may make and use copies of the source
+code and the derivative works internally
+as follows: 
+a  single operational copy of
+a single object code derivative work for internal execution for any
+purpose together with any copy of the operational copy made as
+part of the process of executing the operational copy;
+developmental copies as required for internal development of
+derivative works of the source code; and other copies as required
+for archival purposes.  NO OTHER LICENSES ARE GRANTED OR IMPLIED. 
+.LI
+In return for this license, you grant AT&T Corp. a
+nonexclusive perpetual paid-up license to make, use, sell, have
+made, copy, distribute, and make derivative works of any changes
+which you make in the source code. At AT&T Corp.'s request, you
+will provide AT&T Corp. with a copy of the source code for such
+changes.
+.LI
+AT&T Corp. has no obligation to support the source code
+it is providing under this license.  To the extent permitted under
+the applicable law, AT&T Corp. 
+is LICENSING THE SOURCE CODE
+"AS IS", WITH NO EXPRESS OR IMPLIED WARRANTIES OF ANY KIND,
+INCLUDING, BUT NOT LIMITED TO, ANY IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR
+WARRANTIES AGAINST INFRINGEMENT OF ANY PROPRIETARY RIGHTS OF A
+THIRD PARTY AND WILL NOT BE LIABLE TO YOU FOR ANY
+CONSEQUENTIAL, INCIDENTAL, OR SPECIAL DAMAGES OR FOR ANY CLAIM BY
+ANY THIRD PARTY.
+.LE 1
+For information about commercial licenses or sub-licensing for the
+source code you have downloaded, call (908) 577 2710 (after May 1, 1995).

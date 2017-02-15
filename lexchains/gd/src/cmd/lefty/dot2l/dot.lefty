@@ -1,0 +1,325 @@
+#
+# lefty interface to DOT-style graphs
+#
+# data
+#
+dot = [
+    'mlevel' = 0;
+    'knid'   = 'nid';
+    'kname'  = 'name';
+    'kattr'  = 'attr';
+    'kedges' = 'edges';
+    'keid'   = 'eid';
+    'ktail'  = 'tail';
+    'ktport' = 'tport';
+    'khead'  = 'head';
+    'khport' = 'hport';
+];
+dot.graphattr = [
+    'fontsize' = '14';
+    'fontname' = 'Times-Roman';
+    'fontcolor' = 'black';
+    'color' = 'black';
+];
+dot.nodeattr = [
+    'shape' = 'ellipse';
+    'fontsize' = '14';
+    'fontname' = 'Times-Roman';
+    'fontcolor' = 'black';
+    'color' = 'black';
+];
+dot.edgeattr = [
+    'fontsize' = '14';
+    'fontname' = 'Times-Roman';
+    'fontcolor' = 'black';
+    'color' = 'black';
+];
+dot.nodepos = ['x' = 10; 'y' = 10;];
+dot.graph = [
+    'graphattr' = dot.graphattr;
+    'nodeattr' = dot.nodeattr;
+    'edgeattr' = dot.edgeattr;
+    'graphdict' = [];
+    'nodedict' = [];
+    'graphs' = [];
+    'nodes' = [];
+    'edges' = [];
+    'maxgid' = 0;
+    'maxnid' = 0;
+    'maxeid' = 0;
+    'type' = 'digraph';
+];
+#
+# functions
+#
+dot.newgraph = function () {
+    local graph;
+    graph = copy (dot.graph);
+    return graph;
+};
+dot.insertnode = function (graph, name, attr) {
+    local nid, node, aid;
+    if (~graph)
+        return null;
+    nid = graph.maxnid;
+    if (~name) {
+        while (graph.nodedict[(name = concat ('n', nid))] >= 0)
+            nid = nid + 1;
+    } else if (graph.nodedict[name] >= 0) {
+        dot.message (0, concat ('node: ', name, ' exists'));
+        return null;
+    }
+    graph.nodedict[name] = nid;
+    graph.maxnid = nid + 1;
+
+    graph.nodes[nid] = [
+        dot.knid   = nid;
+        dot.kname  = name;
+        dot.kattr  = copy (dot.nodeattr);
+        dot.kedges = [];
+    ];
+    node = graph.nodes[nid];
+    for (aid in attr)
+        node.attr[aid] = copy (attr[aid]);
+    return node;
+};
+dot.removenode = function (graph, node) {
+    local eid, gid;
+    for (eid in node.edges)
+        dot.removeedge (graph, node.edges[eid]);
+    for (gid in graph.graphs)
+        remove (node.nid, graph.graphs[gid].nodes);
+    remove (node.name, graph.nodedict);
+    remove (node.nid, graph.nodes);
+};
+dot.insertedge = function (graph, nodea, porta, nodeb, portb, attr) {
+    local eid, edge, aid, tport, hport;
+    if (~graph | ~nodea | ~nodeb)
+        return null;
+    if (porta)
+        tport = porta;
+    if (portb)
+        hport = portb;
+    eid = graph.maxeid;
+    while (graph.edges[eid])
+        eid = eid + 1;
+    graph.maxeid = eid + 1;
+    graph.edges[eid] = [
+        dot.keid   = eid;
+        dot.ktail  = nodea;
+        dot.ktport = tport;
+        dot.khead  = nodeb;
+        dot.khport = hport;
+        dot.kattr  = copy (dot.edgeattr);
+    ];
+    edge = graph.edges[eid];
+    for (aid in attr)
+        edge.attr[aid] = copy (attr[aid]);
+    nodea.edges[eid] = edge;
+    nodeb.edges[eid] = edge;
+    return edge;
+};
+dot.removeedge = function (graph, edge) {
+    remove (edge.eid, edge.head.edges);
+    remove (edge.eid, edge.tail.edges);
+    remove (edge.eid, graph.edges);
+};
+dot.insertsgraph = function (graph, name, attr) {
+    local gid, sgraph;
+    if (~graph)
+        return null;
+    gid = graph.maxgid;
+    if (~name) {
+        while (graph.graphdict[(name = concat ('g', gid))] >= 0)
+            gid = gid + 1;
+    } else if (graph.graphdict[name]) {
+        dot.message (0, concat ('graph: ', name, ' exists'));
+        return null;
+    }
+    graph.graphdict[name] = gid;
+    graph.maxgid = gid + 1;
+
+    graph.graphs[gid] = [
+        'gid'       = gid;
+        'name'      = name;
+        'graphattr' = copy (dot.graphattr);
+        'nodeattr'  = copy (dot.nodeattr);
+        'edgeattr'  = copy (dot.edgeattr);
+    ];
+    sgraph = graph.graphs[gid];
+    for (aid in attr)
+        sgraph.graphattr[aid] = copy (attr[aid]);
+    return sgraph;
+};
+dot.removesgraph = function (graph, sgraph) {
+    remove (sgraph.name, graph.graphdict);
+    remove (sgraph.gid, graph.graphs);
+};
+dot.readgraph = function (fd) {
+    local graph, nid, eid;
+    if ((graph = readgraph (fd))) {
+        graph.maxgid = tablesize (graph.graphs);
+        graph.maxnid = tablesize (graph.nodes);
+        graph.maxeid = tablesize (graph.edges);
+        for (nid in graph.nodes)
+            graph.nodes[nid].nid = nid;
+        for (eid in graph.edges)
+            graph.edges[eid].eid = eid;
+    }
+    return graph;
+};
+# if flag == 1, add an 'id' attr to edges (this is for sending to DOT)
+dot.writegraph = function (fd, graph, flag) {
+    local aid, nid, node, gid, sgraph, eid, edge, s1, s2;
+    writeline (fd, 'digraph g {');
+    writeline (fd, 'graph [');
+    for (aid in graph.graphattr)
+        if (aid ~= 'bb')
+            writeline (fd, concat (aid, ' = "', graph.graphattr[aid], '"'));
+    writeline (fd, '];');
+    writeline (fd, 'node [');
+    for (aid in graph.nodeattr)
+        writeline (fd, concat (aid, ' = "', graph.nodeattr[aid], '"'));
+    writeline (fd, '];');
+    writeline (fd, 'edge [');
+    for (aid in graph.edgeattr)
+        writeline (fd, concat (aid, ' = "', graph.edgeattr[aid], '"'));
+    writeline (fd, '];');
+    for (nid = 0; nid < graph.maxnid; nid = nid + 1) {
+        if (~(node = graph.nodes[nid]))
+            continue;
+        writeline (fd, concat ('"', node.name, '" ['));
+        for (aid in node.attr) {
+            if (graph.nodeattr[aid] ~= node.attr[aid])
+                writeline (fd, concat (aid, ' = "', node.attr[aid], '"'));
+        }
+        writeline (fd, '];');
+    }
+    dot.sgraphmap = [];
+    for (gid = 0; gid < graph.maxgid; gid = gid + 1) {
+        sgraph = graph.graphs[gid];
+        if (sgraph & ~dot.sgraphmap[gid])
+            dot.writesgraph (fd, graph, sgraph);
+    }
+    dot.sgraphmap = [];
+    for (eid = 0; eid < graph.maxeid; eid = eid + 1) {
+        if (~(edge = graph.edges[eid]))
+            continue;
+        if (edge.tport)
+            s1 = concat ('"', edge.tail.name, '":"', edge.tport, '"');
+        else
+            s1 = concat ('"', edge.tail.name, '"');
+        if (edge.hport)
+            s2 = concat ('"', edge.head.name, '":"', edge.hport, '"');
+        else
+            s2 = concat ('"', edge.head.name, '"');
+        writeline (fd, concat (s1, ' -> ', s2, ' ['));
+        for (aid in edge.attr)
+            if (graph.edgeattr[aid] ~= edge.attr[aid])
+                writeline (fd, concat (aid, ' = "', edge.attr[aid], '"'));
+        if (flag == 1)
+            writeline (fd, concat ('id = ', eid));
+        writeline (fd, '];');
+    }
+    writeline (fd, '}');
+};
+dot.writesgraph = function (fd, topgraph, graph) {
+    local aid, nid, node, gid, sgraph, eid, edge, s1, s2;
+    dot.sgraphmap[graph.gid] = graph;
+    if (graph.name >= 0)
+        writeline (fd, '{');
+    else
+        writeline (fd, concat ('subgraph "', graph.name, '" {'));
+    writeline (fd, 'graph [');
+    for (aid in graph.graphattr)
+        writeline (fd, concat (aid, ' = "', graph.graphattr[aid], '"'));
+    writeline (fd, '];');
+    writeline (fd, 'node [');
+    for (aid in graph.nodeattr)
+        writeline (fd, concat (aid, ' = "', graph.nodeattr[aid], '"'));
+    writeline (fd, '];');
+    writeline (fd, 'edge [');
+    for (aid in graph.edgeattr)
+        writeline (fd, concat (aid, ' = "', graph.edgeattr[aid], '"'));
+    writeline (fd, '];');
+    for (nid in graph.nodes)
+        writeline (fd, concat ('"', graph.nodes[nid].name, '"'));
+    for (gid = 0; gid < topgraph.maxgid; gid = gid + 1) {
+        if ((sgraph = graph.graphs[gid]) & ~dot.sgraphmap[gid])
+            dot.writesgraph (fd, topgraph, sgraph);
+    }
+    writeline (fd, '}');
+};
+dot.loadgraph = function (input, type) {
+    local fd, graph, nid, eid, gid;
+    if (~input)
+        return null;
+    if (type == 'file') {
+        if (input == '-')
+            fd = 0;
+        else if ((fd = openio ('file', input, 'r')) == -1) {
+            dot.message (0, concat ('cannot open file: ', input));
+            return null;
+        }
+    } else if (type == 'pipe') {
+        if ((fd = openio ('pipe', 'ksh', 'r',
+                concat ("%e ", input))) == -1) {
+            dot.message (0, concat ('cannot run command: ', input));
+            return null;
+        }
+    } else
+        return null;
+    graph = readgraph (fd);
+    if (~(type == 'file' & input == '-'))
+        closeio (fd);
+    if (~graph)
+        return null;
+    graph.maxgid = tablesize (graph.graphs);
+    graph.maxnid = tablesize (graph.nodes);
+    graph.maxeid = tablesize (graph.edges);
+    for (nid in graph.nodes)
+        graph.nodes[nid][dot.knid] = nid;
+    for (eid in graph.edges)
+        graph.edges[eid][dot.keid] = eid;
+    for (gid in graph.graphs)
+        graph.graphs[gid].gid = gid;
+    return graph;
+};
+dot.savegraph = function (input, type, graph) {
+    local fd;
+    if (~input)
+        return;
+    if (type == 'file') {
+        if ((fd = openio ('file', input, 'w')) == -1) {
+            dot.message (0, concat ('cannot open file: ', input));
+            return;
+        }
+    } else if (type == 'pipe') {
+        if ((fd = openio ('pipe', 'ksh', 'w',
+                concat ("%e ", input))) == -1) {
+            dot.message (0, concat ('cannot run command: ', input));
+            return;
+        }
+    } else
+        return;
+    dot.writegraph (fd, graph, 0);
+    closeio (fd);
+};
+dot.getnodesbyattr = function (graph, key, val) {
+    local nid, node, aid, nlist;
+    nlist = [];
+    for (nid in graph.nodes) {
+        node = graph.nodes[nid];
+        for (aid in node.attr) {
+            if (aid == key & node.attr[aid] == val) {
+                nlist[nid] = node;
+                break;
+            }
+        }
+    }
+    return nlist;
+};
+dot.message = function (level, text) {
+    if (level <= dot.mlevel)
+        echo ('dot.lefty: ', text);
+};

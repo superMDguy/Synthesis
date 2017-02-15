@@ -1,0 +1,32 @@
+doit = function (inname, outname) {
+    hide = 0;
+    stack = [];
+    stacki = 0;
+    count = 0;
+    infd = openio ('file', inname, 'r');
+    outfd = openio ('file', outname, 'w');
+    while ((s = readline (infd))) {
+        t = split (s, ':');
+        if (t[0] == 'C') {
+            stack[stacki].s = s;
+            if (~hide)
+                if (tohide[t[2]] | tohide[t[1]])
+                    hide = 1;
+            stack[stacki].h = hide;
+            stacki = stacki + 1;
+            if (~hide)
+                writeline (outfd, s);
+        } else if (t[0] == 'A') {
+            if (~hide)
+                writeline (outfd, s);
+        } else if (t[0] == 'R') {
+            if (~hide)
+                writeline (outfd, s);
+            stacki = stacki - 1;
+            hide = stack[stacki - 1].h;
+        }
+        count = count + 1;
+        if (count % 1000 == 0)
+            echo ('line ', count);
+    }
+};

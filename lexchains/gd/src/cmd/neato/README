@@ -1,0 +1,19 @@
+neato is an undirected graph embedder.
+
+To build it, set GRAPH_DIR and DICT_DIR in makefile.
+These libraries come with the 'dot' program (or
+get them through ulysses!advsoft).  Run make.
+You'll need an ANSI C compiler.  If this presents
+a major problem, let me know and I'll send a
+de-ANSIfied version of libgraph.
+
+To try neato, give the command
+
+	neato -Tps examples/hex.dot -o hex.ps
+
+Then print hex.ps, or view it a PostScript previewer.
+
+Please contact me concerning any suggestions you have
+or problems you encounter.
+
+	Stephen North	north@research.att.com

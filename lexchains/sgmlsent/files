@@ -1,0 +1,12 @@
+apsent1.c
+catch_trash.c
+docify.c
+features.h
+files
+getfields.c
+is_abbrev.c
+is_funct.c
+makefile
+sample.txt
+sgmlsent.c
+tests

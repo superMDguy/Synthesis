@@ -1,0 +1,544 @@
+#
+# CIAO - mainview
+#
+# Implements the main query view of CIAO
+#
+ciao.mv = [];
+#
+# init creates the main view and attaches all the callbacks
+#
+ciao.mv.init = function () {
+    local mv, ws, eid, ent, rid, rel, vid, qid, query;
+    local line, label, field, field1, field2, n;
+    ciao.mv.ws = [];
+    ws = ciao.mv.ws;
+    mv = ciao.mv;
+    mv.modes = [
+        'outmode'  = 'graph mode';
+        'dirmode'  = 'fwd mode';
+        'kindmode' = 'all kinds';
+    ];
+    mv.attr = [
+        'ent' = [
+            1 = [];
+            2 = [];
+        ];
+        'rel' = [];
+    ];
+
+# the X window
+    ws.view = createwidget (-1, [
+        'type'   = 'view';
+        'name'   = 'CIAO - Main View';
+        'origin' = ciao.origs.mview;
+        'size'   = ciao.sizes.mview;
+    ]);
+
+# everything is inside a vertical list
+    ws.areas = createwidget (ws.view, [
+        'type' = 'array'; 'mode' = 'vertical';
+    ]);
+
+# action menus area
+    ws.actions = createwidget (ws.areas, [
+        'type' = 'array'; 'mode' = 'horizontal';
+    ]);
+    ws.general = createwidget (ws.actions, [
+        'type' = 'label'; 'text' = 'general';
+    ]);
+    widgets[ws.general].leftdown = mv.generaldomenu;
+    widgets[ws.general].rightdown = mv.generaldomenu;
+    ws.queries = createwidget (ws.actions, [
+        'type' = 'label'; 'text' = 'queries';
+    ]);
+    widgets[ws.queries].leftdown = mv.queriesdomenu;
+    widgets[ws.queries].rightdown = mv.queriesdomenu;
+    ws.outmode = createwidget (ws.actions, [
+        'type' = 'label'; 'text' = mv.modes.outmode;
+    ]);
+    widgets[ws.outmode].leftdown = mv.outmodedomenu;
+    widgets[ws.outmode].rightdown = mv.outmodedomenu;
+    ws.help = createwidget (ws.actions, [
+        'type' = 'label'; 'text' = 'help';
+    ]);
+    widgets[ws.help].leftdown = mv.helpdomenu;
+    widgets[ws.help].rightdown = mv.helpdomenu;
+
+# entity fields
+    for (eid = 0; ciao.db.entfields[eid]; eid = eid + 1) {
+        ent = ciao.db.entfields[eid];
+        line = createwidget (ws.areas, [
+            'type' = 'array'; 'mode' = 'horizontal';
+        ]);
+        label = createwidget (line, [
+            'type' = 'label'; 'text' = concat (ent.label, ':');
+        ]);
+        field1 = createwidget (line, [
+            'type' = 'label'; 'text' = '';
+        ]);
+        field2 = createwidget (line, [
+            'type' = 'label'; 'text' = '';
+        ]);
+        widgets[field1].leftdown = mv.entdomenu;
+        widgets[field1].rightdown = mv.entdomenu;
+        widgets[field1].ent = 1;
+        widgets[field1].eid = eid;
+        widgets[field2].leftdown = mv.entdomenu;
+        widgets[field2].rightdown = mv.entdomenu;
+        widgets[field2].ent = 2;
+        widgets[field2].eid = eid;
+        ws.entfields[eid] = [
+            'line' = line;
+            'label' = label;
+            'field1' = field1;
+            'field2' = field2;
+        ];
+    }
+
+# relationship fields
+    for (rid = 0; ciao.db.relfields[rid]; rid = rid + 1) {
+        rel = ciao.db.relfields[rid];
+        line = createwidget (ws.areas, [
+            'type' = 'array'; 'mode' = 'horizontal';
+        ]);
+        label = createwidget (line, [
+            'type' = 'label'; 'text' = concat (rel.label, ':');
+        ]);
+        field1 = createwidget (line, [
+            'type' = 'label'; 'text' = '';
+        ]);
+        widgets[field1].leftdown = mv.reldomenu;
+        widgets[field1].rightdown = mv.reldomenu;
+        widgets[field1].rel = 1;
+        widgets[field1].rid = rid;
+        ws.relfields[rid] = [
+            'line' = line;
+            'label' = label;
+            'field1' = field1;
+        ];
+    }
+
+# it's best to install the resize routines after all the widgets are set up
+    widgets[ws.areas].resize   = mv.areasresize;
+    widgets[ws.actions].resize = mv.actionsresize;
+    for (eid in ws.entfields)
+        widgets[ws.entfields[eid].line].resize = mv.entlineresize;
+    for (rid in ws.relfields)
+        widgets[ws.relfields[rid].line].resize = mv.rellineresize;
+
+# navigation graph
+    ws.graphc = dotty.createviewandgraph (null, "file", [
+        'parent' = ws.areas;
+        'funcs' = [
+            'leftdown' = ciao.mv.leftdown;
+            'rightdown' = ciao.mv.rightdown;
+            'keyup' = ciao.mv.keyup;
+            'redraw' = dotty.redraw;
+        ];
+    ]);
+    ws.graph = widgets[ws.graphc].parent;
+    setwidgetattr (ws.graph, ['size' = ciao.sizes.graph;]);
+    mv.gt = dotty.graphs[dotty.views[ws.graphc].gtid];
+    mv.gt.graph.graphattr.rankdir = 'LR';
+    mv.mvnode = dotty.insertnode (mv.gt, null, null, ['label' = 'Main View';]);
+    dotty.layoutgraph (mv.gt);
+
+# load up entity menus
+    n = tablesize (ciao.mv.genericentmenu);
+    for (eid in ciao.db.entfields) {
+        ent = ciao.db.entfields[eid];
+        ciao.mv.entmenus[eid] = copy (ciao.mv.genericentmenu);
+        for (vid = 0; ent.values[vid]; vid = vid + 1)
+            ciao.mv.entmenus[eid][n + vid] = ent.values[vid];
+    }
+# load up relationship menus
+    n = tablesize (ciao.mv.genericrelmenu);
+    for (rid in ciao.db.relfields) {
+        rel = ciao.db.relfields[rid];
+        ciao.mv.relmenus[rid] = copy (ciao.mv.genericrelmenu);
+        for (vid = 0; rel.values[vid]; vid = vid + 1)
+            ciao.mv.relmenus[rid][n + vid] = rel.values[vid];
+    }
+# load up queries menu
+    for (qid in ciao.db.queries) {
+        query = ciao.db.queries[qid];
+        ciao.mv.queriesmenu[qid] = query.label;
+    }
+};
+#
+# resize callbacks
+#
+ciao.mv.areasresize = function (data) {
+    local ws, n, eid, rid, ret;
+    ws = ciao.mv.ws;
+    n = tablesize (ws.entfields) + tablesize (ws.relfields) + 1;
+    ret = [
+        ws.actions = ['x' = data.size.x; 'y' = ciao.sizes.label.y;];
+        ws.relline = ['x' = data.size.x; 'y' = ciao.sizes.label.y;];
+        ws.graph = [
+            'x' = data.size.x;
+            'y' = data.size.y - n * (ciao.sizes.label.y + 2);
+        ];
+    ];
+    for (eid in ws.entfields)
+        ret[ws.entfields[eid].line] = [
+            'x' = data.size.x; 'y' = ciao.sizes.label.y;
+        ];
+    for (rid in ws.relfields)
+        ret[ws.relfields[rid].line] = [
+            'x' = data.size.x; 'y' = ciao.sizes.label.y;
+        ];
+    return ret;
+};
+ciao.mv.actionsresize = function (data) {
+    local ws, x, y, ret;
+    ws = ciao.mv.ws;
+    x = data.size.x / 4;
+    y = ciao.sizes.label.y;
+    ret = [
+        ws.general = ['x' = x; 'y' = y;];
+        ws.queries = ['x' = x; 'y' = y;];
+        ws.outmode = ['x' = x; 'y' = y;];
+        ws.help    = ['x' = x; 'y' = y;];
+    ];
+    return ret;
+};
+ciao.mv.entlineresize = function (data) {
+    local ws, x, y, ch, cid, ret;
+    ws = ciao.mv.ws;
+    x = data.size.x / 5;
+    y = ciao.sizes.label.y;
+    ch = widgets[data.widget].children;
+    for (cid in ch) {
+        if (widgets[cid].ent)
+            ret[cid] = ['x' = 2 * x; 'y' = y;];
+        else
+            ret[cid] = ['x' = x;     'y' = y;];
+    }
+    return ret;
+};
+ciao.mv.rellineresize = function (data) {
+    local ws, x, y, ch, cid, ret;
+    ws = ciao.mv.ws;
+    x = data.size.x / 5;
+    y = ciao.sizes.label.y;
+    ch = widgets[data.widget].children;
+    for (cid in ch) {
+        if (widgets[cid].rel)
+            ret[cid] = ['x' = 4 * x; 'y' = y;];
+        else
+            ret[cid] = ['x' = x;     'y' = y;];
+    }
+    return ret;
+};
+#
+# action callbacks
+#
+ciao.mv.generalmenu = [
+    0 = 'set variables';
+    1 = 'clear all fields';
+    2 = 'clear all entity 1 fields';
+    3 = 'clear all entity 2 fields';
+    4 = 'clear all relationship fields';
+    5 = 'update CIA database';
+    6 = 'delete cache';
+    7 = 'quit';
+];
+ciao.mv.generaldomenu = function (data) {
+    local i, s;
+    if (~((i = displaymenu (data.widget, ciao.mv.generalmenu)) >= 0))
+        return;
+    s = ciao.mv.generalmenu[i];
+    if (s == "set variables")
+        ciao.vv.start (ciao.db.variables, ciao.db.values);
+    else if (s == "clear all fields") {
+        ciao.mv.clearallentfields (1);
+        ciao.mv.clearallentfields (2);
+        ciao.mv.clearallrelfields ();
+    } else if (s == "clear all entity 1 fields")
+        ciao.mv.clearallentfields (1);
+    else if (s == "clear all entity 2 fields")
+        ciao.mv.clearallentfields (2);
+    else if (s == "clear all relationship fields")
+        ciao.mv.clearallrelfields ();
+    else if (s == "update CIA database")
+        ciao.mv.updatedb ();
+    else if (s == "delete cache")
+        ciao.mv.deletecache ();
+    else if (s == 'quit')
+        exit ();
+};
+ciao.mv.queriesmenu = [
+];
+ciao.mv.queriesdomenu = function (data) {
+    local i, s;
+    if (~((i = displaymenu (data.widget, ciao.mv.queriesmenu)) >= 0))
+        return;
+    s = ciao.mv.queriesmenu[i];
+    ciao.db.doquery (-1, null, ciao.mv.modes, s, ciao.mv.attr);
+};
+ciao.mv.outmodemenu = [
+    0 = 'text mode';
+    1 = 'graph mode';
+    2 = 'db mode';
+];
+ciao.mv.outmodedomenu = function (data) {
+    local i, s;
+    if (~((i = displaymenu (data.widget, ciao.mv.outmodemenu)) >= 0))
+        return;
+    s = ciao.mv.outmodemenu[i];
+    ciao.mv.setoutmode (data.widget, s);
+};
+ciao.mv.helpmenu = [
+    0 = 'read the manual';
+];
+ciao.mv.helpdomenu = function (data) {
+    local i;
+    i = displaymenu (data.widget, ciao.mv.helpmenu);
+    echo ('nothing to do');
+};
+ciao.mv.genericentmenu = [
+    0 = 'clear';
+    1 = 'set';
+];
+# ciao.mv.init adds fields to the menus below
+ciao.mv.entmenus = [
+];
+ciao.mv.entdomenu = function (data) {
+    local i, s, w;
+    w = widgets[data.widget];
+    if (~((i = displaymenu (data.widget, ciao.mv.entmenus[w.eid])) >= 0))
+        return;
+    s = ciao.mv.entmenus[w.eid][i];
+    if (s == "clear")
+        ciao.mv.clearentfield (data.widget);
+    else if (s == 'set')
+        ciao.mv.setentfield (data.widget, null);
+    else if (s == 'list')
+        ciao.mv.listentfield (data.widget);
+    else
+        ciao.mv.setentfield (data.widget, s);
+};
+ciao.mv.genericrelmenu = [
+    0 = 'clear';
+    1 = 'set';
+];
+# ciao.mv.init adds fields to the menus below
+ciao.mv.relmenus = [
+];
+ciao.mv.reldomenu = function (data) {
+    local i, s, w;
+    w = widgets[data.widget];
+    if (~((i = displaymenu (data.widget, ciao.mv.relmenus[w.rid])) >= 0))
+        return;
+    s = ciao.mv.relmenus[w.rid][i];
+    if (s == "clear")
+        ciao.mv.clearrelfield (data.widget);
+    else if (s == 'set')
+        ciao.mv.setrelfield (data.widget, null);
+    else if (s == 'list')
+        ciao.mv.listrelfield (data.widget);
+    else
+        ciao.mv.setrelfield (data.widget, s);
+};
+#
+# operations
+#
+ciao.mv.setoutmode = function (widget, s) {
+    ciao.mv.modes.outmode = s;
+    setwidgetattr (widget, ['text' = s;]);
+};
+ciao.mv.clearallentfields = function (ent) {
+    local eid;
+    ciao.mv.attr.ent[ent] = [];
+    if (ent == 1) {
+        for (eid in ciao.mv.ws.entfields)
+            ciao.mv.clearentfield (ciao.mv.ws.entfields[eid].field1);
+    } else {
+        for (eid in ciao.mv.ws.entfields)
+            ciao.mv.clearentfield (ciao.mv.ws.entfields[eid].field2);
+    }
+};
+ciao.mv.clearentfield = function (widget) {
+    local w;
+    w = widgets[widget];
+    ciao.mv.attr.ent[w.ent][w.eid] = "";
+    setwidgetattr (widget, ['text' = '';]);
+};
+ciao.mv.setentfield = function (widget, s) {
+    local w;
+    w = widgets[widget];
+    if (~s) {
+        s = ask ('attribute value:');
+        if (~s)
+            return;
+    }
+    ciao.mv.attr.ent[w.ent][w.eid] = s;
+    setwidgetattr (widget, ['text' = s;]);
+};
+ciao.mv.listentfield = function (widget) {
+    local w;
+    w = widgets[widget];
+    ciao.mv.attr.ent[w.ent][w.eid] = "";
+    setwidgetattr (widget, ['text' = '';]);
+};
+ciao.mv.clearallrelfields = function () {
+    local rid;
+    ciao.mv.attr.rel = [];
+    for (rid in ciao.mv.ws.relfields)
+        ciao.mv.clearrelfield (ciao.mv.ws.relfields[rid].field1);
+};
+ciao.mv.clearrelfield = function (widget) {
+    local w;
+    w = widgets[widget];
+    ciao.mv.attr.rel[w.eid] = "";
+    setwidgetattr (widget, ['text' = '';]);
+};
+ciao.mv.setrelfield = function (widget, s) {
+    local w;
+    w = widgets[widget];
+    if (~s) {
+        s = ask ('attribute value:');
+        if (~s)
+            return;
+    }
+    ciao.mv.attr.rel[w.rid] = s;
+    setwidgetattr (widget, ['text' = s;]);
+};
+ciao.mv.listrelfield = function (widget) {
+    local w;
+    w = widgets[widget];
+    ciao.mv.attr.rel[w.eid] = "";
+    setwidgetattr (widget, ['text' = '';]);
+};
+ciao.mv.updatedb = function () {
+    ciao.mv.deletecache ();
+    system ('nmake ciadb');
+    ciao.gv.destroyallviews ();
+};
+ciao.mv.deletecache = function () {
+    system (concat (ciao.db.cmd, ' deletecache'));
+};
+#
+# main graph management
+#
+ciao.mv.ginsert = function (pview, cview, name, cmds) {
+    local pnode, cnode, gt, graph, t, hname, i;
+    gt = ciao.mv.gt;
+    graph = gt.graph;
+    if (pview == -1)
+        pnode = ciao.mv.mvnode;
+    else
+        pnode = graph.nodes[graph.nodedict[concat ('n', pview)]];
+# temporary hack until quotes are handled right
+    t = split (name, '"');
+    hname = '';
+    for (i = 0; t[i]; i = i + 1)
+        hname = concat (hname, t[i]);
+    cnode = dotty.insertnode (gt, null, concat ('n', cview), [
+        'label' = hname;
+        'shape' = 'box';
+    ]);
+    cnode.cmds = cmds;
+    cnode.view = cview;
+    dotty.insertedge (gt, pnode, null, cnode, null, null);
+    dotty.layoutgraph (gt);
+};
+ciao.mv.gremove = function (canvas) {
+    local gt, graph;
+    gt = ciao.mv.gt;
+    graph = gt.graph;
+    dotty.removenode (gt, graph.nodes[graph.nodedict[concat ('n', canvas)]]);
+    dotty.layoutgraph (gt);
+};
+ciao.mv.globalmenu = [
+    0 = "redraw";
+    1 = "save graph";
+    2 = "zoom in";
+    3 = "zoom out";
+    4 = "find node";
+    5 = "show script";
+    6 = "quit";
+];
+ciao.mv.doglobalmenu = function (s, data) {
+    local vt, gt;
+    vt = dotty.views[data.widget];
+    gt = ciao.mv.gt;
+    if (s == "redraw")
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (s == "save graph")
+        dotty.savegraph (gt, null, 'file');
+    else if (s == "zoom in")
+        dotty.zoom (vt, 0.5);
+    else if (s == "zoom out")
+        dotty.zoom (vt, 2);
+    else if (s == "find node")
+        dotty.findnode (vt, gt);
+    else if (s == "show script") {
+        if (dotty.txtview == 'on')
+            dotty.txtview = 'off';
+        else
+            dotty.txtview = 'on';
+        txtview (dotty.txtview);
+    } else if (s == "quit")
+        exit ();
+};
+ciao.mv.nodemenu = [
+    0 = "set attr";
+    1 = "print attr";
+    2 = "delete view";
+];
+ciao.mv.donodemenu = function (s, data) {
+    local vt, gt;
+    vt = dotty.views[data.widget];
+    gt = ciao.mv.gt;
+    if (s == "set attr")
+        dotty.setattr (gt, data.obj);
+    else if (s == "print attr") {
+        if (data.obj.nid >= 0)
+            echo ('node: ', data.obj.name);
+        dump (data.obj.attr);
+    } else if (s == "delete view")
+        ciao.gv.destroyview (data.obj.view);
+};
+ciao.mv.leftdown = function (data) {
+    local i;
+    if (data.obj) {
+        if (~(data.obj.view >= 0))
+            return;
+        ciao.gv.popupview (data.obj.view);
+    }
+};
+ciao.mv.rightdown = function (data) {
+    local i;
+    if (data.obj) {
+        if (~(data.obj.nid >= 0))
+            return;
+        if ((i = displaymenu (data.widget, ciao.mv.nodemenu)) >= 0)
+            ciao.mv.donodemenu (ciao.mv.nodemenu[i], data);
+    } else {
+        if ((i = displaymenu (data.widget, ciao.mv.globalmenu)) >= 0)
+            ciao.mv.doglobalmenu (ciao.mv.globalmenu[i], data);
+    }
+};
+ciao.mv.keyup = function (data) {
+    local vt, gt, kv;
+    vt = dotty.views[data.widget];
+    gt = dotty.graphs[vt.gtid];
+    if (data.key == 'l')
+        dotty.layoutgraph (gt);
+    else if (data.key == 'Z')
+        dotty.zoom (vt, 0.9);
+    else if (data.key == 'z')
+        dotty.zoom (vt, 1.1);
+    else if (data.key == ' ')
+        dotty.redrawgraph ([vt.vtid = vt;], gt);
+    else if (data.obj) {
+        if (data.key == 'a')
+            dotty.setattr (gt, data.obj);
+        else if (data.key == 'd') {
+            if (data.obj.view >= 0)
+                ciao.gv.destroyview (data.obj.view);
+        }
+    }
+};

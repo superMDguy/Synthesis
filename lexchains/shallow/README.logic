@@ -1,0 +1,277 @@
+Shallow Parser Logic and Rule File Language Manual:
+---------------------------------------------------
+
+The shallow parser was developed by Ido Dagan and Yuval Krymolowski, based on
+work by Dror Ben-Arie and Ilan Kirsh. Contact yuvalk@cs.biu.ac.il for technical
+issues.
+
+The shallow parser extracts from a sentence short combinations of words
+which satisfy certain fundamental relations such as verb-object,
+subject-verb, adjective-noun. It is implemented as a Perl script, created
+automatically from a rule file. The goal is only to extract
+relations, not to parse the sentence deeply, hence only dependencies
+of a local nature are handled (i.e., compound sentences or very complicated
+phrases are not likely to be analyzed correctly).
+
+This file explains the logic of the shallow parser and serves as
+a language manual for the rule file.
+
+Other README files:
+-------------------
+
+ README.format - Input and output files format
+
+ README.user   - Basic usage information
+
+Components:
+-----------
+
+ - Rule file:
+    The rules that identify local structures in the sentence.
+
+ - Compiler:
+    A Perl script which converts the rule file into the
+    shallow parser Perl script. The compiler uses a skeleton
+    file for creating the script. 
+
+ - Shallow Parser Script, the output of the compiler.
+
+ This document pertains to the rule file and shallow parser. It does not
+ intend to explain how the compiler works.
+
+
+Input and Output Files Format:
+------------------------------
+
+ See file README.format
+
+
+Basic Usage Information:
+------------------------
+
+ See file README.user
+
+
+Parser Logic:
+-------------
+
+ The goal of shallow parsing is to extract words that satisfy basic
+ grammatical relations. If these relations hold between phrases, the
+ parser would select the most important word from the phrase
+ (e.g., the head of a noun phrase or the main modifier of a modifier
+ sequence). The shallow parser output is therefore, in a way, a summary
+ of the input sentence.
+
+ The shallow parser is intended to detect gramattical structures of
+ a local nature. That is, there is no intention of analyzing the 
+ whole sentencce and discriminate any structures within it. Instead,
+ the idea is 'bottom=up' - define rules for local structures, and then
+ find relations between structures already known to exist. For example,
+ when looking for a 'modifier-np' relation, we want (for the sake of
+ simplicity) the main modifier and the np head. A shallow parser approach
+ would be to detect modifiers anp np's independently, find the important
+ words in each, look for a mod-np sequence and extract only the selected
+ words from the detected sequence (an example follows when detailing
+ rule definition).
+
+
+Parsing Rules:
+--------------
+
+ The rules are written with the idea of detecting small structures
+ first, mark them within the sentence, and use these marks for
+ detecting higher structures. Marked structures may also hold
+ information about the selected word in them.
+
+ There are two types of rules:
+
+  - Assignment rules, which are used for assigning a name to a pattern.
+    These are essentially like variables or macros in the rule file,
+    and do not produce any code lines in the shallow parser script
+    (unless explicitly specified, as will be detailed later in this section).
+
+    The form of an assignment rule is:
+     name = pattern
+
+  - Marking rules, which leave a mark within the sentence for every
+    satisfied pattern. That mark is used later as a substitute for the
+    rule's original pattern. These rules thus correspond, in a way,
+    to subroutines. Marking rules develop a loop in the shallow parser
+    script which, for every occurrence of the pattern:
+
+     - Defines a unique label, (e.g., np1, np2, etc.)
+     - Stores selected words and their labels under
+       the defined label.
+     - Collects selected words from rules referred ('called')
+       by the current rule. This way, rules which refer to
+       the current rule will be able to access words
+       selected by lower-level rules.
+     - Marks the current occurrence within the input sentence
+       with the unique label.
+
+    The form of a marking rule is:
+     name := pattern
+
+  Patterns are regular expressions, generally using predefined rules
+  as variables (e.g., $noun).
+
+  The tokens in a pattern should be separated by blanks.
+
+  The rules for the basic parts of speech are explain in the Fine Points
+  Section.
+
+
+  Here are three toy rules for identifying a simple n_bar, its main modifier
+  and head. This section outlines their functionality, and demonstrates how
+  to use rules of the two types and how a mark created by one rule is used
+  by subsequent rules.
+
+  # A list of adverbs
+  #
+    adv_list = $adv +
+
+  # These two patterns select words (main adjective and head noun),
+  # therefore they leave a mark in the sentence.
+
+    mod_list := $adv_list ? main=$adj
+    n_bar := $mod_list ? head=$noun
+
+
+  Consider the input sentence:
+
+   This/DT/This is/VBZ/is a/DT/a very/RB/very hot/JJ/hot day/NN/day
+
+  - Pre processing:
+
+   {This&1/DT/This}{is&2/VBZ/is}{a&3/DT/a}{very&4/RB/very}
+   {hot&5/JJ/hot}{day&6/NN/day}
+
+  - Assignments created by basic rules: (see Fine Points Section for details)
+
+     $adj  = {[^/]+&\d+/J[^/]*/[^}]+}
+     $adv  = {[^/]+&\d+/RB[^/]*/[^}]+}
+     $noun = {[^/]+&\d+/NN[S][^/]*/[^}]+}
+
+     $adv_list = (?:{[^/]+&\d+/RB[^/]*/[^}]+})+
+
+     The adv_list pattern encloses the $adv in (?: ... ), this is
+     a Perl5 feature which means we may not refer to that group as $n
+     after the pattern is matched.
+
+  - Processing for mod_list rule:
+
+     mod_list := $adv_list ? main=$adj
+
+    The mod_list rule develops the pattern:
+     (?:$adv_list)?($adj) ,
+    which is satisfied by "{very&4/RB/very}{hot&5/JJ/hot}" .
+
+    The loop it develops in the shallow parser script:
+     - Creates a label, would be "mod_list1" at the first time.
+     - Stores string $1 as the feature "main" of "mod_list1".
+       In our example it would store "{hot&5/JJ/hot}" .
+     - Encloses the whole mod_list within markups using the unique label:
+          <<mod_list1>>...<</mod_list1>> .
+       The sentence after modification is:
+
+       {This&1/DT/This}{is&2/VBZ/is}{a&3/DT/a}
+       <<mod_list1>>{very&4/RB/very}{hot&5/JJ/hot}<</mod_list1>>
+       {day&6/NN/day}
+
+    Future references to this rule will not search the whole pattern
+    again. Instead, they will search for a pair of marks enclosing
+    a certain occurrence of the rule :
+
+     $mod_list =
+      (?:<<[^/][^>]*>>)*<<(mod_list\d+)>>.+<</\1>>(?:<</[^>]+>>)*
+            |                  |         |     |              |
+            |                  |         |     |              |
+            v                  v         |     v              v
+       sequence of           open        |   close          sequence of
+       opening marks      mod_list mark  |  mod_list mark  closing marks
+                                         v
+                                 any text of mod_list
+                                    already found
+
+    The pattern includes possible marks of other rules which may appear
+    before or after the mod_list, to allow flexibility when concatenating
+    the pattern with another patterns.
+
+  - Processing for n_bar rule:
+
+      n_bar := $mod_list ? head=$noun
+
+     The pattern developed is
+       (?$mod_list)?($noun)
+
+     Note that
+
+     This rule is satisfied by
+      <<mod_list1>>{very&4/RB/very}{hot&5/JJ/hot}<</mod_list1>>
+      {day&6/NN/day}
+
+     Processing is similar to that of the mod_list rule, with an
+     additional treatment of using the main modifier, previously
+     selected by that rule.
+
+     The n_bar pattern contains the mod_list pattern, which contains
+     the reference "(mod_list\d+)" as the first bracketed sub-pattern.
+     Therefore, for each n_bar, Variable $1 will contain the label of
+     its modifier list. This label is used for extracting the main
+     modifier of the list.
+
+     The np head, taken as the noun in this toy rule, is extracted
+     in essentially the same way the main modifier is extracted
+     from a mod_list (here it is taken from Variable $2).
+
+Specifying the Output:
+---------------------
+
+
+
+
+Fine Points:
+------------
+
+  The basic rules, for the individual parts of speech, require a separate
+  explanation because they are the lowest level.
+
+  Prior to processing, the input sentence, a sequence of word/lema/tag triples
+  separated by blanks is converted to a sequence of
+  {word/lema/tag}{word/lema/tag} (not separated by blanks). This makes it easier
+  to identify word boundaries, as in the rules for "anyword" and "anylema".
+  In addition, a number is appended to each word (separated by '&') so
+  go/VB/go is changed to, e.g., {go&2/VB/go}.
+
+  Consider, for example, the following set of rules
+
+  # Matches any string which is not a delimiter
+    anystr   =  [^/] *
+
+  # identify a word - {.../
+    anyword =  {[^/]+/
+
+  # look for the next delimiter, this pattern always follows a word
+  # or $anyword .
+    anypos  =   [^/]+/
+
+  # looks for } closing bracket, this pattern always follows a part
+  # of speech pattern or $anypos
+    anylema =   [^}]+}
+
+  # Specific tags
+    adj_pos   =   J $anystr /    # adjective (JJ,JJR,JJS)
+    adv_pos   =   RB $anystr  /  # adverb    (RB,RBR,RBS)
+    noun_pos =  NN[S]? $anystr / # noun      (NN,NNS) proper noun excluded
+
+  # Combinations of tags and words
+    adj       =  $anyword $adj_pos $anylema
+    adv       =  $anyword $adv_pos $anylema
+    noun      =  $anyword $noun_pos $anylema
+
+  The tags of the last group are the most commonly used, the "adj"
+  pattern translates to
+
+   $adj = {[^/]+&\d+/J[^/]*/[^}]+}
+          { word +  / adj_ /lema }
+            & num     pos

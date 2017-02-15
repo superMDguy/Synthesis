@@ -1,0 +1,320 @@
+
+#
+# Rules for shallow parser, see the README file for
+# a description of the format.
+#
+# The shallow parser was developed by Ido Dagan and Yuval Krymolowski, based on
+# work by Dror Ben-Arie. Contact yuvalk@cs.biu.ac.il for technical
+# issues.
+#
+# Note - the rules are not finalized yet.
+#
+    # Basic string macros   (see the description of the input file)
+    #--------------------
+
+# Matches any string which is not a delimiter
+    anystr   =  [^/] *
+    anystr_not_null   =  [^/] +
+
+# identify a word - {.../
+    anyword =  {[^/]+/
+
+# look for the next delimiter, this pattern always follows a word
+# or $anyword .
+    anypos  =   [^/]+/
+
+# looks for } closing bracket, this pattern always follows a part
+# of speech pattern or $anypos
+    anylema =   [^}]+}
+
+    anytoken = $anyword $anypos $anylema
+anyhead = ( << [^/] [^>]* >> ) *  # <<xxx-n>> ... <</xxx-n>> bracket 
+anytail = ( << / [^>]* >> ) *     # the n'th occurence of rule xxx 
+anyheadword = $anyhead $anyword
+any = $anyhead $anyword $anypos $anylema $anytail
+
+    # tags of the basic parts of speech
+    #----------------------------------
+    #
+    adj_pos   =   J $anystr /   # adjective (JJ,JJR,JJS)
+    adv_pos   =   RB $anystr  / # adverb    (RB,RBR,RBS)
+    cc_pos    =   CC /            # coordinating conjunction
+    cd_pos    =   CD /            # cardinal number
+    dt_pos    =   DT /            # determiner
+    ex_pos    =   EX /            # existential "there"
+    fw_pos    =   FW /            # foreign word
+    ls_pos    =   LS /            # list item marker
+    modal_pos =   MD /            # modal
+    noun_pos  =   NN[S]? /        # noun (NN,NNS; proper noun excluded)
+    noun_prop_noun_pos  =   N $anystr  /   # noun      (NN,NNS,NNP,NNPS)
+    noun_single_pos =  N[N]?[P]? /   # single noun (may be proper)
+    noun_single_not_prop_pos =  NN /   # single noun (NOT proper)
+    prop_noun_pos =  N[N]?P[S]? /    # proper noun
+    particle_pos =  RP /          # particle
+    pdt_pos   =   PDT /           # predeterminer
+    pos_pos   =   POS /           # possessive ending
+    pp_pos    =   PRP /           # personal pronoun
+    ppd_pos   =   PRP\$ /         # possessive pronoun
+    prep_pos  =   IN /            # preposition or subordinating conjunction
+    to_pos    =   TO /            # "to"
+    uh_pos    =   UH /            # interjection
+    verb_pos  =   V $anystr  /    # verb      (VB,VBD,VBG,VBN,VBP,VBZ)
+    vb_pos    =   VB /            # verb - base form
+    vbd_pos   =   VBD /           # verb - past tense
+    vbg_pos   =   VBG /           # verb - gerund
+    vbn_pos   =   VBN /           # verb - past participle
+    vbp_pos   =   VBP /           # verb - non-3rd-person-singular present
+    vbz_pos   =   VBZ /           # verb - 3rd-person-singular present
+    vbgn_pos  =   VB[GN] /        # verb - gerund or past participle
+    wdt_pos   =   WDT /           # wh-determiner
+    wp_pos    =   WP /            # wh-pronoun
+    wpd_pos   =   WP\$ /          # possessive wh-pronoun
+    wrb_pos   =   WRB /           # wh-adverb
+
+
+    not_vbgn_pos =  VB[^GN]? /    # verb - neither gerund nor past participle
+
+#
+# words with the corresponding tags
+# ---------------------------------
+#
+
+    adj       =  $anyword $adj_pos $anylema
+    adv       =  $anyword $adv_pos $anylema
+    cc        =  $anyword $cc_pos $anylema
+    cd        =  $anyword $cd_pos $anylema
+    dt        =  $anyword $dt_pos $anylema
+    ex        =  $anyword $ex_pos $anylema
+    fw        =  $anyword $fw_pos $anylema
+    ls        =  $anyword $ls_pos $anylema
+    modal     =  $anyword $modal_pos $anylema
+    noun      =  $anyword $noun_pos $anylema
+    noun_prop_noun = $anyword $noun_prop_noun_pos $anylema
+    noun_single = $anyword $noun_single_pos $anylema
+    noun_single_not_prop =  $anyword $noun_single_not_prop_pos $anylema
+    prop_noun =  $anyword $prop_noun_pos $anylema
+    particle  =  $anyword $particle_pos $anylema
+    pdt       =  $anyword $pdt_pos $anylema
+    pos       =  $anyword $pos_pos $anylema
+    pp        =  $anyword $pp_pos $anylema
+    ppd       =  $anyword $ppd_pos $anylema
+    prep      =  $anyword $prep_pos $anylema
+    to        =  $anyword $to_pos $anylema
+    uh        =  $anyword $uh_pos $anylema
+    verb      =  $anyword $verb_pos $anylema
+    vb        =  $anyword $vb_pos $anylema
+    vbd       =  $anyword $vbd_pos $anylema
+    vbg       =  $anyword $vbg_pos $anylema
+    vbn       =  $anyword $vbn_pos $anylema
+    vbp       =  $anyword $vbp_pos $anylema
+    vbz       =  $anyword $vbz_pos $anylema
+    vbgn      =  $anyword $vbgn_pos $anylema
+    wdt       =  $anyword $wdt_pos $anylema
+    wp        =  $anyword $wp_pos $anylema
+    wpd       =  $anyword $wpd_pos $anylema
+    wrb       =  $anyword $wrb_pos $anylema
+
+#
+# specific words
+#
+    comma     =  {,/,/ $anylema  
+    of_prep   =  {of/ $prep_pos $anylema 
+    dlr       =  {\$/\$/ $anylema                  # currency sign
+    out       =  {out/ $anypos $anylema 
+    newline   =  ^
+    duration_w  =  { ( years | months | weeks | days | hours ) /
+
+# tagged words, NOT belonging to specific categories
+
+    not_adj_adv = $anyword [^JR] $anystr / $anylema 
+    not_adv_v = $anyword [^VR] $anystr / $anylema
+    not_adv_v_adj = $anyword [^VRJ] $anystr / $anylema
+    not_cd_n  = $anyword ( [^CN] | ( C[^D] ) ) $anystr / $anylema
+    not_cd_n_ex_verb  = $anyword ( [^CMNV] | ( C[^D] ) ) $anystr / $anylema
+    not_n_adj = $anyword [^NJ] $anystr / $anylema
+    not_prep  = $anyword [^I] $anystr / $anylema
+    not_verb  = $anyword [^V] $anystr / $anylema
+    not_vbgn  = $anyword $not_vbgn_pos $anylema 
+
+#
+# small utility relations 
+#
+    age       := $cd $duration_w $anypos $anylema {old/ $anypos $anylema
+
+    hyphen = {-/:/-}
+    open_paren = {(/ $anypos (}
+    close_paren = {)/ $anypos )}
+    prop_noun_mod = ( $prop_noun ( $cc | $hyphen ) ? ) * 
+    prop_noun_unit := $prop_noun_mod n1=$prop_noun ( $of_prep $dt ? \
+	$prop_noun_mod $prop_noun ) *
+    paren_pn_unit := $open_paren $prop_noun_mod main=$prop_noun $close_paren
+    prop_noun_seq = $prop_noun_unit $paren_pn_unit ?
+
+#
+# disjunctions of syntactical categories
+#
+    ex_adj    :=  $adj | $vbn | $vbg | $age 
+    ex_cc     =  $cc | $comma 
+    ex_prep   =  $prep | $to 
+    ex_verb   =  $verb | $modal 
+
+# The following define several options for a determiner sequence, which is
+# the specifier of NP (turns an N-bar into an NP).
+
+    dt_seq_not_null = ( $dt $of_prep $pdt ? $dt ? $ppd ?) |  \
+                         ( $pdt $dt ? $ppd ?)|               \
+                         ( $dt $ppd ?) | $ppd
+                                                          
+    restricted_dt_seq =  $pdt ? $dt ? $ppd ?
+    dt_seq_for_pp =   ( $dt $of_prep ) ?
+    dt_seq =          ( $dt $of_prep ) ? $restricted_dt_seq 
+
+# a sequence of adverbs, optionally separated by a comma or a conjunction
+    adv_list = $adv ( $ex_cc ? $adv )*
+
+#
+# a sequence of adjectives (or adjectives and participles), optionally
+# separated by a comma or a conjunction. Each can be preceded by a sequence of
+# adverbs.
+#
+
+## These rules must use  ':=' because they mark the main modifier
+##  (which is the last one on the sequence).
+
+    s_mod_list_1_adj := $adv_list ? main=$adj 
+    s_mod_list_1 := $adv_list ? main=$ex_adj
+
+    s_mod_list_adj = $s_mod_list_1_adj $ex_cc ? \
+        ( ( $s_mod_list_1 $ex_cc ? ) | ( $prop_noun_seq $cc ? )) *
+    s_mod_list = ( ( $s_mod_list_1 $ex_cc ? ) | ( $prop_noun_seq $cc ? )) +
+
+# modifiers of a noun (all the above, including nouns)
+
+    num_value = $dlr ? $cd
+    num_prefix = $num_value $out ? $of_prep 
+    num_modifiers = $restricted_dt_seq $s_mod_list_adj ? $num_prefix
+    mod_list_adj := $noun_single * $s_mod_list_adj ( $noun + $s_mod_list ) *
+    mod_list := $noun_single * $s_mod_list ( $noun + $s_mod_list ) *
+ 
+# modifiers of a noun (all the above, including cardinal numbers)
+#    noun_mod = "(" mod_list "?"   \
+#                  "(" noun "?" dlr "?" cd "+" mod_list "?)?" ")";   ##*? last
+#    noun_mod_adj = "(" mod_list_adj "?"   \
+#                  "(" noun "?" dlr "?" cd "+" mod_list "?)?" ")";   ##*? last
+
+## modified so it will not fit an empty string, otherwise the
+## parser would enter an infinite loop.
+
+    noun_mod :=  ( $mod_list ? $noun_single ? $num_value $mod_list ?) | \
+                   $mod_list  ##*? last
+    noun_mod_adj := ( $mod_list_adj ? $noun_single ? $num_value $mod_list ?) | \
+                   $mod_list_adj  ##*? last
+
+## These rules must use  ':=' because they mark the head noun
+##  (the last noun).
+
+    n_bar := $noun_mod ? ( $noun ) * head=$noun
+    n_bar_adj := $noun_mod_adj  ( $noun ) * head=$noun
+
+
+# The following describe an N-bar including a possessive qualifier.
+## noun_mod is optional (in proj1.awk it could be empty)
+
+    pos_h = $pos $cd * $s_mod_list ? 
+    pos_chn := $noun_mod ? ( $noun ) * \
+       ( $noun $pos_h $noun * ) ? head=$noun   ##*? last
+    pos_chn_adj :=  $noun_mod_adj  ( $noun ) * \
+       ( $noun $pos_h $noun * ) ? head=$noun    ##*? last
+
+# np defines a full NP. We allow for three types:
+# 1. An NP that has no specifier (no determiner of any sort). Such an NP
+#    must not start with a present/past participle (e.g., "working people" may
+#    be an NP, but "smoking cigarettes" is probably not. We exclude them both.)
+# 2. An NP with a not-null specifier - the previous restriction does not apply
+#    (e.g., "the loving people" is unambiguous, as opposed to "loving people").
+# 3. An NP headed by a pronoun - normally the NP will contain nothing else,
+#    but we allow for some kinds of specifiers (e.g., they, most of them, all
+#    of them, five of them).
+# Note: in some cases a sequence of two NPs will be analysed as one (if the
+#       second one is not preceded by a determiner).
+
+##
+## The information about the head and the main modifier is
+## contained in noun_mod and pos_chn rule groups
+##
+#1    np := $pos_chn_adj | $pos_chn  | $prop_noun_seq | \
+#1         ((  $dt_seq_not_null  |   ( $num_modifiers $restricted_dt_seq  ))   \
+#1                          ( $pos_chn_adj | $pos_chn  ))|      \
+#1         (((  $adj $of_prep  )|  $dt_seq_for_pp  |                           \
+#1                          (  $num_modifiers $restricted_dt_seq  ))  $pp  )
+#1
+#1   prefixed_np =                                                             \
+#1         ((( $dt_seq_not_null | ( $num_modifiers $restricted_dt_seq ))   \
+#1                                         ( $n_bar | $pos_chn ))|    \
+#1         ((( $adj $of_prep )| $dt_seq_for_pp |                             \
+#1                         ( $num_modifiers $restricted_dt_seq )) $pp ))
+
+# The following define a prepositional phrase. This basically consists of a
+# preposition and a noun phrase. There are cases where we also accept that
+# the complement of the preposition be a non-finite clause, with a (phono-
+# logically) missing subject, and a gerund for a verb. For example, "against
+# smoking cigarttes" is accepted by prep_ph_with_part, not by prep_ph.
+
+#1    prep_ph = $ex_prep_not_conj $adv * $np
+#2    prep_ph_with_part =                                 \
+#3            $ex_prep_not_conj ( $adv | $vbg | $vbn ) ? $np        ##*?
+#4    prep_ph_with_part_np =                              \
+#5            $ex_prep_not_conj ( $adv | $vbg | $vbn ) ?  $np $cd *  ##*?
+#6    prep_ph_not_of_than_np = $ex_prep_not_of_than $adv * $np $cd * 
+#7    prep_ph_of_np = $of_prep $adv * $np $cd * 
+#7    prep_ph_np = $ex_prep_not_conj $adv * $np $cd * 
+
+# a sequence of prepositional phrases (last one is not headed by "of","than")
+#!    pp_seq_np = $prep_ph ? $prep_ph_not_of_than_np             ##*?
+
+# an NP followed by a sequence of prepositional phrases
+# (see the patterns using it for explanations)
+#   np_with_pps = ( ( $verb $ex_prep_not_conj ) | $conj_prep | $say_verb ) \
+#1    np_with_pps := \
+#1                     $adv ? $np $cd *                                     \
+#1                    ( $prep_ph_with_part  $prep_ph_with_part ? ) ?    ##*?
+
+# Structures which represent details about proper nouns:
+
+    ex_wdt = $wdt | $wp
+    pn_wdtp_not_be := $prop_noun_seq $comma $ex_wdt $ex_verb * v=$verb_not_be
+    pn_wdtp_be_n := $prop_noun_seq $comma $ex_wdt $ex_verb * $be_verb $n_bar
+    pn_be_n := $prop_noun_seq $ex_verb * $be_verb $n_bar
+    pn_dt_n := $prop_noun_seq $comma $dt ? $n_bar
+    pn_ppd_n := $prop_noun_seq $ex_verb * $ppd $n_bar
+    pn_wpd_n := $prop_noun_seq $comma $wpd $n_bar
+
+QUOTE:    n_seq  =  ( $noun_single ) * ( $noun | $prop_noun )
+
+#
+# the middle line was taken from v_o_b
+#
+
+
+# The following matches an adjective which serves as the predicate of an NP.
+# We do not restrict the verb to be "be", as other copula verbs may serve as
+# well.
+# We demand that the NP not be preceded by a verb, to make sure that it is not a
+# part of a relative clause, as in "The man who wrote the book was wise", which
+# should not be analysed as if "wise" referred to "the book".
+# We demand that the NP not be preceded by a preposition, as in this case the
+# NP probably belongs to a prepositional phrase that is the adjunct of another
+# noun, to which the adjective refers. For example, "The bird on the roof is
+# green" must not be analysed as if "green" referred to "the roof".
+# (Exceptions are subordinating prepositions, prepositions in the beginning of
+# a line, and prepositions followed by a verb - which are all allowed before
+# the NP.)
+# We don't allow for a noun or an adjective at the end of the pattern. This aims
+# to avoid sentences like "He hates big apples" or "He hates big green apples"
+# being analysed as if they involved an adjective-noun relation between "big"
+# and "he".
+# Note that the overlap option is set, in order to allow pat 2 to find all
+# adjective-noun relations inside the NP.
+#           example: The <clouded sky> must definitely be <grey>.
+#           example: <He> looks <nice>.
+

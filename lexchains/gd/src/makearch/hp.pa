@@ -1,0 +1,21 @@
+# we had to port sections of MIT X11 (Xmu and Xaw).
+# you're definitely on your own here.
+X11INC=-I/usr/add-on/X11/include -I/home/ek/work/hp/include -I/usr/include/X11R5
+X11LIB=-L/usr/add-on/X11/lib -L/home/ek/work/hp/lib -L/usr/lib/X11R5
+
+CC = gcc
+YACC=yacc
+SED=sed
+RM=rm -f
+RANLIB=ranlib
+MKDIR=mkdir
+AR=ar
+LD=ld -r
+MV=mv
+CP=cp -f
+AWK=nawk
+SORT=sort
+INSTALL=cp
+
+CCFLAGS=-fpic -O
+LDFLAGS=

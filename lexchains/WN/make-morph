@@ -1,0 +1,3 @@
+#!/usr/bin/csh
+cd ../tokenizer/perl;./sent-morph ../../WN/$1 c=\\\& > ../../WN/$2;
+
