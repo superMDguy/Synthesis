@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from random import shuffle
 
@@ -8,7 +9,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.edmundson import EdmundsonSummarizer as Summarizer
+from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 from nltk.tokenize import sent_tokenize
@@ -66,29 +67,29 @@ class Subject:
 
     def classifySources(self):
         for doc in self.sources:
-            sentences = doc['text']
-            categories = self.classifier.predict(sentences)
-            for i in range(len(sentences)):
-                self.sections[categories[i]].append(sentences[i]) #Update the sections dictionary to add the new sentence
+            paragraphs = doc['text']
+            categories = self.classifier.predict(paragraphs)
+            for i in range(len(paragraphs)):
+                self.sections[categories[i]].append(paragraphs[i]) #Update the sections dictionary to add the new sentence
 
     def summarizeSections(self):
         summaryLength = round((len(self.sections)/self.getTotalLength())*self.summaryLength) #Set summary length of section to be proportional to complete length of section
-        for section, sentences in self.sections.items():
-            doc = '\n\n'.join(sentences)
-            parser = PlaintextParser.from_string(doc, Tokenizer('english'))
-            stemmer = Stemmer('english')
+        # for section, sentences in self.sections.items():
+        #     doc = '\n\n'.join(sentences)
+        #     parser = PlaintextParser.from_string(doc, Tokenizer('english'))
+        #     stemmer = Stemmer('english')
 
-            summarizer = Summarizer(stemmer)
-            summarizer.stop_words = get_stop_words('english')
-            summ = summarizer(parser.document, summaryLength)
+        #     summarizer = Summarizer(stemmer)
+        #     summarizer.stop_words = get_stop_words('english')
+        #     summ = summarizer(parser.document, summaryLength)
 
-            self.sections[section] = [str(sentence) + " ({0})".format(self.getSource(sentence)) for sentence in summ]
+        #     self.sections[section] = [str(sentence) + " ({0})".format(self.getSource(sentence)) for sentence in summ]
 
     def getSource(self, sentence):
         for source in self.sources:
             if str(sentence) in source['text']:
                 return '[source]({0})'.format(source['url'])
-        return '[source]({0})'.format(self.wikiPage.url) #THe wikipedia page isn't included with the rest of the sources.
+        return '[source]({0})'.format(self.wikiPage.url) #The wikipedia page isn't included with the rest of the sources.
 
     def getTotalLength(self):
         total = 0

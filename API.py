@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import html
 
 from flask import Flask, request, send_from_directory
@@ -14,4 +15,5 @@ def send_static(path):
 @app.route('/synthesis', methods=['POST'])
 def getSynthesis():
     subject = Subject(request.form['subject'])
-    return "<script>alert('Your synthesis is done!')</script>" + markdown(html.escape(str(subject), quote=False))
+    subjectText = html.escape(str(subject), quote=False).replace('\\', '') #Remove extra escapes, prep it for HTML
+    return "<script>alert('Your synthesis is done!')</script>" + markdown(subjectText)

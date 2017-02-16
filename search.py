@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import subprocess
 import pdb
 
@@ -36,15 +37,19 @@ def getHTML(url):
     return str(subprocess.check_output(["phantomjs", "getHTML.js", url]))
 
 def cleanText(doc):
-    sentences = sent_tokenize(doc)
-    cleanSentences = []
-    if len(sentences) < 5: #Too short...
-        return False
-    for sentence in sentences:
-        if not len(sentence.split(" ")) < 10: #Make sure it's not too short, which would probably mean it's a heading
-            sentence = ' '.join(sentence.split())
-            cleanSentences.append(sentence)
-    return cleanSentences
+    paragraphs = doc.split('\n\n')
+    cleanParagraphs = []
+    for paragraph in paragraphs:
+        sentences = sent_tokenize(paragraph)
+        cleanSentences = []
+        if len(sentences) < 5: #Too short...
+            return False
+        for sentence in sentences:
+            if not len(sentence.split(" ")) < 10: #Make sure it's not too short, which would probably mean it's a heading
+                sentence = ' '.join(sentence.split())
+                cleanSentences.append(sentence)
+        cleanParagraphs.append('  '.join(cleanSentences))
+    return cleanParagraphs
 
 
 
