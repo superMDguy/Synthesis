@@ -16,41 +16,49 @@ def search(term):
     return urls
 
 
-def getArticles(term):
+def getArticles(term, sourceMap):
     urls = search(term)
     results = []
     for url in urls:
-        if not 'wikipedia.org' in url:  # Don't look at wikipedia articles, that's already done
+        if 'wikipedia.org' not in url:  # Don't reread wikipedia
             article = Article(url=url)
-            # pdb.set_trace()
             article.download(html=getHTML(url))
             article.parse()
             if article.text:
-                cleaned = cleanText(article.text)
+                cleaned = cleanText(article.text, article.url, sourceMap)
                 if cleaned:
                     results.append({'text': cleaned,
                                     'url': url})
+
     return results
 
 
 def getHTML(url):
-    return str(subprocess.check_output(["phantomjs", "getHTML.js", url]))
+    return subprocess.check_output(["phantomjs", "getHTML.js", url]).decode('utf-8')
 
-def cleanText(doc):
+
+def cleanText(doc, url, sourceMap):
     paragraphs = doc.split('\n\n')
+    totalSents = 0
     cleanParagraphs = []
     for paragraph in paragraphs:
         sentences = sent_tokenize(paragraph)
         cleanSentences = []
-        if len(sentences) < 5: #Too short...
-            return False
-        for sentence in sentences:
-            if not len(sentence.split(" ")) < 10: #Make sure it's not too short, which would probably mean it's a heading
-                sentence = ' '.join(sentence.split())
-                cleanSentences.append(sentence)
-        cleanParagraphs.append('  '.join(cleanSentences))
+        if not len(sentences) < 2:  # Too short...
+            totalSents += len(sentences)
+            for sentence in sentences:
+                # Make sure it's not too short, which would probably mean it's
+                # a heading
+                if not len(sentence.split(" ")) < 8:
+                    # Remove extra whitespace
+                    sentence = ' '.join(sentence.split())
+                    sourceMap[sentence] = url
+                    # Add clean sentence, along with source
+                    cleanSentences.append(sentence)
+            cleanParagraphs.append('  '.join(cleanSentences))
+    if totalSents < 7:
+        return False
     return cleanParagraphs
-
 
 
 if __name__ == "__main__":

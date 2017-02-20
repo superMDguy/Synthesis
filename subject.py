@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from random import shuffle
+import pdb
 
 import wikipedia
 import sumy
@@ -16,17 +17,21 @@ from nltk.tokenize import sent_tokenize
 
 from search import getArticles
 
+
 def clean(string):
     return ' '.join(string.split())
 
+
 class Subject:
+
     def __init__(self, subjectTitle, summaryLength=100):
         self.subjectTitle = subjectTitle
         self.summaryLength = summaryLength
 
+        self.sourceMap = {}
         self.wikiPage = wikipedia.page(wikipedia.search(self.subjectTitle)[0])
         self.sections = self.getSections()
-        self.sources = getArticles(subjectTitle)
+        self.sources = getArticles(subjectTitle, self.sourceMap)
         self.classifier = self.train()
 
         self.classifySources()
@@ -36,17 +41,24 @@ class Subject:
         sectionsDict = {}
         content = self.wikiPage.content
         sections = re.findall('\n== (.*) ==\n', content)
-        sections = [section for section in sections if not section in ["See also", "Bibliography", "Further reading", "References", "External links"]]
+        sections = [section for section in sections if section not in [
+            "See also", "Bibliography", "Further reading", "References", "External links"]]
         for section in sections:
             start = content.index('== {0} =='.format(section))
 
             try:
                 end = start + content[start:].index('\n== ')
-            except ValueError: #On last heading, no headings follow it
+            except ValueError:  # On last heading, no headings follow it
                 end = -1
 
-            sectionContent = clean(re.sub('==* .* ==*', '', content[start:end])) #Remove all subheadings
-            sectionsDict[section] = sent_tokenize(sectionContent) #Split into sentences
+            # Remove all subheadings
+            sectionContent = clean(
+                re.sub('==* .* ==*', '', content[start:end]))
+            sentences = sent_tokenize(sectionContent)  # Split into sentences
+            for sentence in sentences:
+                # Add the source to the source map
+                self.sourceMap[sentence] = self.wikiPage.url
+            sectionsDict[section] = sentences
         return sectionsDict
 
     def train(self):
@@ -59,10 +71,10 @@ class Subject:
                 target.append(title)
 
         text_clf = Pipeline([('vect', CountVectorizer()),
-                            ('tfidf', TfidfTransformer()),
-                            ('clf', SGDClassifier(loss='hinge', penalty='l2',
-                                                alpha=1e-3, n_iter=5, random_state=42)),
-                            ])
+                             ('tfidf', TfidfTransformer()),
+                             ('clf', SGDClassifier(loss='hinge', penalty='l2',
+                                                   alpha=1e-3, n_iter=5, random_state=42)),
+                             ])
         return text_clf.fit(data, target)
 
     def classifySources(self):
@@ -70,26 +82,32 @@ class Subject:
             paragraphs = doc['text']
             categories = self.classifier.predict(paragraphs)
             for i in range(len(paragraphs)):
-                self.sections[categories[i]].append(paragraphs[i]) #Update the sections dictionary to add the new sentence
+                # Update the sections dictionary to add the new sentence
+                self.sections[categories[i]].append(paragraphs[i])
 
     def summarizeSections(self):
-        summaryLength = round((len(self.sections)/self.getTotalLength())*self.summaryLength) #Set summary length of section to be proportional to complete length of section
-        # for section, sentences in self.sections.items():
-        #     doc = '\n\n'.join(sentences)
-        #     parser = PlaintextParser.from_string(doc, Tokenizer('english'))
-        #     stemmer = Stemmer('english')
+        # Set summary length of section to be proportional to complete length
+        # of section
+        summaryLength = round(
+            (len(self.sections) / self.getTotalLength()) * self.summaryLength)
+        for section, paragraphs in self.sections.items():
+            doc = '  '.join(paragraphs)
+            parser = PlaintextParser.from_string(doc, Tokenizer('english'))
+            stemmer = Stemmer('english')
 
-        #     summarizer = Summarizer(stemmer)
-        #     summarizer.stop_words = get_stop_words('english')
-        #     summ = summarizer(parser.document, summaryLength)
+            summarizer = Summarizer(stemmer)
+            summarizer.stop_words = get_stop_words('english')
+            summ = summarizer(parser.document, summaryLength)
 
-        #     self.sections[section] = [str(sentence) + " ({0})".format(self.getSource(sentence)) for sentence in summ]
+            self.sections[section] = [
+                str(sentence) + self.getSource(sentence) for sentence in summ]
+        print('done with summary')
 
     def getSource(self, sentence):
-        for source in self.sources:
-            if str(sentence) in source['text']:
-                return '[source]({0})'.format(source['url'])
-        return '[source]({0})'.format(self.wikiPage.url) #The wikipedia page isn't included with the rest of the sources.
+        try:
+            return ' [source]({0})'.format(self.sourceMap[str(sentence)])
+        except Exception:
+            return 'unknown'
 
     def getTotalLength(self):
         total = 0
@@ -100,7 +118,7 @@ class Subject:
     def __str__(self):
         '''Outputs final document as markdown'''
         out = "# " + self.wikiPage.title
-        for section,sentences in self.sections.items():
+        for section, sentences in self.sections.items():
             out += "\n\n## " + section + "\n"
             for sentence in sentences:
                 out += "- " + sentence + "\n"
