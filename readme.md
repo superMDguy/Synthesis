@@ -55,11 +55,13 @@ researchers all around.  I feel like this project could be a beginning to a new 
 than what Google has already done.  This could be useful not just for writers, but for anyone who wants to get quick information from
 a variety of sources.
 
-Of course, the current implementation isn't very near to this ideal, and so a lot of work must be done.  I think their are three main
-areas to focus on:
+Of course, the current implementation isn't very near to this ideal, and so a lot of work must be done. Here are some specific areas I'd
+like to focus on:
 
 1. Source selection. I'd lke to develop some sort of algorithm to cull sources, so when I search for "pizza", it'll give me research
-information on pizza, not the website for pizzahut.com.  I'm not exactly sure how I'd do this yet.javascript
+information on pizza, not the website for pizzahut.com.  I'm not exactly sure how I'd do this yet.
 2. Sentence classification.  Though I feel like the SVM classifier does a surprisingly job with limited data, it doesn't always get
 it perfectly right.  I'm thinking of trying something like doc2vec so it can have some knowledge built in.
 3. Summarization.  I'd like it to eliminate irrelevant sentences and sentences that need more context.
+4. Speed.  Currently it takes about 2 minutes to generate the synthesis.  Most of this time is taken up downloading the web articles, so
+it'd really help if I could pre-download webpages, kind of like search engines do.  This isn't really possible for me, though.

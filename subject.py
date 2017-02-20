@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import re
 from random import shuffle
 import pdb
@@ -13,9 +14,11 @@ from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
-from nltk.tokenize import sent_tokenize
-
 from search import getArticles
+
+import nltk
+nltk.download('punkt')
+from nltk.tokenize import sent_tokenize
 
 
 def clean(string):
@@ -29,20 +32,23 @@ class Subject:
         self.summaryLength = summaryLength
 
         self.sourceMap = {}
+
+    def build(self):
         self.wikiPage = wikipedia.page(wikipedia.search(self.subjectTitle)[0])
         self.sections = self.getSections()
-        self.sources = getArticles(subjectTitle, self.sourceMap)
+        self.sources = getArticles(self.subjectTitle, self.sourceMap)
         self.classifier = self.train()
 
         self.classifySources()
         self.summarizeSections()
+        return self.__str__()
 
     def getSections(self):
         sectionsDict = {}
         content = self.wikiPage.content
         sections = re.findall('\n== (.*) ==\n', content)
         sections = [section for section in sections if section not in [
-            "See also", "Bibliography", "Further reading", "References", "External links"]]
+            "See also", "Bibliography", "Further reading", "References", "External links", "Notes"]]
         for section in sections:
             start = content.index('== {0} =='.format(section))
 
@@ -105,7 +111,7 @@ class Subject:
 
     def getSource(self, sentence):
         try:
-            return ' [source]({0})'.format(self.sourceMap[str(sentence)])
+            return " (<a href='{0}'>source</a>)".format(self.sourceMap[str(sentence)])
         except Exception:
             return 'unknown'
 
@@ -116,12 +122,13 @@ class Subject:
         return total
 
     def __str__(self):
-        '''Outputs final document as markdown'''
-        out = "# " + self.wikiPage.title
+        '''Outputs final document as html'''
+        out = "<h1>" + self.wikiPage.title + "</h1>"
         for section, sentences in self.sections.items():
-            out += "\n\n## " + section + "\n"
+            out += "\n<br/><h2>" + section + "</h2><ul>"
             for sentence in sentences:
-                out += "- " + sentence + "\n"
+                out += "<li>" + sentence + "</li>\n"
+            out += "</ul>"
         return out
 
 if __name__ == "__main__":
