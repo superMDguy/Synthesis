@@ -1,5 +1,5 @@
 
-# Synthesis
+# ![Synthesis](https://raw.githubusercontent.com/supermdguy/synthesis/master/static/images/logo.png)
 *Automatic information extraction and classification*
 
 ## Motivation
