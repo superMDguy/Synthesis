@@ -1,5 +1,2 @@
-.vscode/*
-node_modules/*
-pip-selfcheck.json
-__pycache__/*
-*.pyc
+./*
+!index.html
