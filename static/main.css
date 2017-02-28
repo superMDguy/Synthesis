@@ -1,0 +1,17 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+h1 {
+    font-family: 'Exo 2', sans-serif;
+    color: #888888;
+    font-size: 20vmin;
+    padding: 3%;
+}
+
+#lines-container {
+    width: 40px;
+}

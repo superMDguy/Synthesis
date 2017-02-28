@@ -1,11 +1,28 @@
+<html>
+
 <head>
-<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-<title>Synthesis</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Exo+2:Thin|Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue-light_blue.min.css" />
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css">
+    <title>Automatic information summarization | Synthesis</title>
 </head>
-<form action="/synthesis" method="post" class="form-inline">
-    <label for="subjectField">Subject</label>
-    <div class="form-group">
-        <input type="text" name="subject" id="subjectField" class="form-control"></input>
-    </div>
-    <input type="submit" value="Submit" class="btn btn-primary">
-</form>
+
+<body>
+    <h1>Synthesis</h1>
+    <form action="/synthesis" method="post">
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" name="subject" id="subject">
+            <label class="mdl-textfield__label" for="subject">Subject</label>
+        </div>
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" id="lines-container">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="lines" name="lines" value=100>
+            <label class="mdl-textfield__label" for="lines">Items</label>
+            <span class="mdl-textfield__error">Input is not a number!</span>
+        </div>
+        <input type="submit" value="Submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">
+    </form>
+</body>
+
+</html>

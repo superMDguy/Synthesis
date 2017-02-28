@@ -41,14 +41,14 @@ class Subject:
 
         self.classifySources()
         self.summarizeSections()
-        return self.__str__()
+        return self
 
     def getSections(self):
         sectionsDict = {}
         content = self.wikiPage.content
         sections = re.findall('\n== (.*) ==\n', content)
         sections = [section for section in sections if section not in [
-            "See also", "Bibliography", "Further reading", "References", "External links", "Notes"]]
+            "See also", "Bibliography", "Further reading", "References", "External links", "Notes", "Notes and references"]]
         for section in sections:
             start = content.index('== {0} =='.format(section))
 
@@ -105,8 +105,7 @@ class Subject:
             summarizer.stop_words = get_stop_words('english')
             summ = summarizer(parser.document, summaryLength)
 
-            self.sections[section] = [
-                str(sentence) + self.getSource(sentence) for sentence in summ]
+            self.sections[section] = [str(sentence) for sentence in summ]
         print('done with summary')
 
     def getSource(self, sentence):

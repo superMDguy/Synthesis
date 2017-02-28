@@ -44,8 +44,7 @@ It combines all sentences for each section, and then uses the `sumy` module to s
 sentences it has currently.
 
 ### 8. Done!
-It outputs each section, along with each sentence of the section in a bulleted list.  I use markdown for the output, and convert it to
-HTML to make things simpler.  Originally, the sentences were output in paragraph form, but when I read through it, the sentences
+It outputs each section, along with each sentence of the section in a bulleted list.  Originally, the sentences were output in paragraph form, but when I read through it, the sentences
 didn't "flow" well together.  This made the writing sound jerky and artificial.  Once I put it in a bulleted list, it felt much more
 natural, like a typical list of notes.
 
@@ -65,3 +64,4 @@ it perfectly right.  I'm thinking of trying something like doc2vec so it can hav
 3. Summarization.  I'd like it to eliminate irrelevant sentences and sentences that need more context.
 4. Speed.  Currently it takes about 2 minutes to generate the synthesis.  Most of this time is taken up downloading the web articles, so
 it'd really help if I could pre-download webpages, kind of like search engines do.  This isn't really possible for me, though.
+5. Images.  I'd like to interlace images with the rest of the content, probably one image per category.
