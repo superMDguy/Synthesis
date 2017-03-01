@@ -5,11 +5,11 @@ body {
     align-items: center;
 }
 
-h1 {
+h1 > a {
     font-family: 'Exo 2', sans-serif;
     color: #888888;
     font-size: 20vmin;
-    padding: 3%;
+    text-decoration: none;
 }
 
 form, form > *{
