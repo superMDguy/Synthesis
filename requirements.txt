@@ -1,6 +1,7 @@
 Flask==0.12
+Keras==1.2.2
 newspaper3k==0.1.9
-nltk==3.2.2
+numpy==1.11.1rc1
 redis==2.10.5
 requests==2.10.0
 rq==0.7.1
