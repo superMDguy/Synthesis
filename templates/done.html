@@ -21,23 +21,26 @@
     <body>
         <h1>{{title}}</h1>
         {% for section_title, sentences in sections.items() %}
-        <div class="mdl-card mdl-shadow--6dp">
-            <div class="mdl-card__title">
-                <h2 class="mdl-card__title-text">{{ section_title }}</h2>
+            {% if sentences|length != 0 %}
+            <div class="mdl-card mdl-shadow--6dp">
+                <div class="mdl-card__title">
+                    <h2 class="mdl-card__title-text">{{ section_title }}</h2>
+                </div>
+                <!--<div class="mdl-card__media">
+                    <img src="photo.jpg" width="220" height="140" border="0" alt="" style="padding:20px;">
+                </div>-->
+                <div class="mdl-card__supporting-text">
+                    <ul>
+                        {% for sentence in sentences %}
+                        <li>{{ sentence }} (<a href='{{ sourceMap[sentence] }}'>source</a>)</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
-            <!--<div class="mdl-card__media">
-                <img src="photo.jpg" width="220" height="140" border="0" alt="" style="padding:20px;">
-            </div>-->
-            <div class="mdl-card__supporting-text">
-                <ul>
-                    {% for sentence in sentences %}
-                    <li>{{ sentence }} (<a href='{{ sourceMap[sentence] }}'>source</a>)</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <br/>
-        <br/> {% endfor %}
+            <br/>
+            <br/>
+            {% endif %}
+        {% endfor %}
     </body>
 
 </html>

@@ -15,10 +15,7 @@ from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 from search import getArticles
-
-import nltk
-nltk.download('punkt')
-from nltk.tokenize import sent_tokenize
+from segtok.segmenter import split_single, split_multi
 
 
 def clean(string):
@@ -33,6 +30,7 @@ class Subject:
         self.useWikipedia = useWikipedia
 
         self.sourceMap = {}
+        self.lengths = {}
 
     def build(self):
         self.wikiPage = wikipedia.page(wikipedia.search(self.subjectTitle)[0])
@@ -61,7 +59,9 @@ class Subject:
             # Remove all subheadings
             sectionContent = clean(
                 re.sub('==* .* ==*', '', content[start:end]))
-            sentences = sent_tokenize(sectionContent)  # Split into sentences
+            self.lengths[section] = len(sectionContent)
+            sentences = [sent for sent in split_single(
+                sectionContent)]  # Split into sentences
             for sentence in sentences:
                 # Add the source to the source map
                 self.sourceMap[sentence] = self.wikiPage.url
@@ -80,12 +80,13 @@ class Subject:
         text_clf = Pipeline([('vect', CountVectorizer()),
                              ('tfidf', TfidfTransformer()),
                              ('clf', SGDClassifier(loss='hinge', penalty='l2',
-                                                   alpha=1e-3, n_iter=5)),
+                                                   alpha=1e-5, n_iter=7)),
                              ])
 
         if not self.useWikipedia:
             for title, sentences in self.sections.items():
-                self.sections[title] = []  # Clear sections if not using wikipedia
+                # Clear sections if not using wikipedia
+                self.sections[title] = []
 
         return text_clf.fit(data, target)
 
@@ -98,11 +99,13 @@ class Subject:
                 self.sections[categories[i]].append(paragraphs[i])
 
     def summarizeSections(self):
-        # Set summary length of section to be proportional to complete length
-        # of section
-        summaryLength = round(
-            (len(self.sections) / self.getTotalLength()) * self.summaryLength)
         for section, paragraphs in self.sections.items():
+            # Set summary length of section to be proportional to complete
+            # length of section
+            print(section)
+            summaryLength = round(
+                self.lengths[section] / self.getTotalLength() * self.summaryLength)
+            print(summaryLength)
             doc = '  '.join(paragraphs)
             parser = PlaintextParser.from_string(doc, Tokenizer('english'))
             stemmer = Stemmer('english')
@@ -114,28 +117,16 @@ class Subject:
             self.sections[section] = [str(sentence) for sentence in summ]
         print('done with summary')
 
-    def getSource(self, sentence):
-        try:
-            return " (<a href='{0}'>source</a>)".format(self.sourceMap[str(sentence)])
-        except Exception:
-            return 'unknown'
-
     def getTotalLength(self):
         total = 0
-        for section in self.sections:
-            total += len(section)
+        for section, length in self.lengths.items():
+            total += length
         return total
 
     def __str__(self):
-        '''Outputs final document as html'''
-        out = "<h1>" + self.wikiPage.title + "</h1>"
-        for section, sentences in self.sections.items():
-            out += "\n<br/><h2>" + section + "</h2><ul>"
-            for sentence in sentences:
-                out += "<li>" + sentence + "</li>\n"
-            out += "</ul>"
-        return out
+        return str(self.sections)
 
 if __name__ == "__main__":
     subj = Subject("convolutional neural networks")
+    subj.build()
     print(subj)

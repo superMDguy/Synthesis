@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import html
 import os
+from time import time
 
 from flask import Flask, request, send_from_directory, render_template, make_response
 from rq import Queue
@@ -25,7 +26,7 @@ def send_static(path):
 @app.route('/synthesis', methods=['POST'])
 def getSynthesis():
     try:
-        id_str = request.form['subject'].replace(' ', '-')
+        id_str = (request.form['subject']+str(time())).replace(' ', '-')
         if request.form.get('wikipedia'):
             useWikipedia = True
         else:

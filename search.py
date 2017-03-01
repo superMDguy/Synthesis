@@ -5,13 +5,13 @@ import pdb
 import requests
 from newspaper import Article
 from newspaper.article import ArticleException
-from nltk.tokenize import sent_tokenize
+from segtok.segmenter import split_single, split_multi
 
 SEARCH_URL = "https://www.googleapis.com/customsearch/v1?key=AIzaSyCmEb62AUBrhDxP_6p76Dp3e1b_jQ4157U&cx=001943372337957644989:uegyifhrqx0&q="
 
 
 def search(term):
-    items = requests.get(SEARCH_URL + term).json()['items']
+    items = requests.get(SEARCH_URL + term + " information").json()['items']
     urls = [item['link'] for item in items]
     return urls
 
@@ -29,7 +29,6 @@ def getArticles(term, sourceMap):
                 if cleaned:
                     results.append({'text': cleaned,
                                     'url': url})
-
     return results
 
 
@@ -42,14 +41,14 @@ def cleanText(doc, url, sourceMap):
     totalSents = 0
     cleanParagraphs = []
     for paragraph in paragraphs:
-        sentences = sent_tokenize(paragraph)
+        sentences = [sent for sent in split_single(paragraph)]
         cleanSentences = []
-        if not len(sentences) < 2:  # Too short...
+        if not len(sentences) < 2:  # Too short to be a paragraph
             totalSents += len(sentences)
             for sentence in sentences:
                 # Make sure it's not too short, which would probably mean it's
                 # a heading
-                if not len(sentence.split(" ")) < 8:
+                if not len(sentence.split(" ")) < 11:
                     # Remove extra whitespace
                     sentence = ' '.join(sentence.split())
                     sourceMap[sentence] = url

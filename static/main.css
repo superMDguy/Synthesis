@@ -12,6 +12,10 @@ h1 {
     padding: 3%;
 }
 
+form, form > *{
+    margin: 3%;
+}
+
 #lines-container {
     width: 40px;
 }
