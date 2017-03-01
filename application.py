@@ -26,7 +26,12 @@ def send_static(path):
 def getSynthesis():
     try:
         id_str = request.form['subject'].replace(' ', '-')
-        subject = Subject(request.form['subject'], int(request.form['lines']))
+        if request.form.get('wikipedia'):
+            useWikipedia = True
+        else:
+            useWikipedia = False
+        subject = Subject(request.form['subject'], summaryLength=int(
+            request.form['lines']), useWikipedia=useWikipedia)
         q.enqueue(subject.build, job_id=id_str, timeout=600)
     except Exception as e:
         return '<h1>Error</h1>' + str(e)

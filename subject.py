@@ -27,9 +27,10 @@ def clean(string):
 
 class Subject:
 
-    def __init__(self, subjectTitle, summaryLength=100):
+    def __init__(self, subjectTitle, summaryLength=100, useWikipedia=True):
         self.subjectTitle = subjectTitle
         self.summaryLength = summaryLength
+        self.useWikipedia = useWikipedia
 
         self.sourceMap = {}
 
@@ -79,8 +80,13 @@ class Subject:
         text_clf = Pipeline([('vect', CountVectorizer()),
                              ('tfidf', TfidfTransformer()),
                              ('clf', SGDClassifier(loss='hinge', penalty='l2',
-                                                   alpha=1e-3, n_iter=5, random_state=42)),
+                                                   alpha=1e-3, n_iter=5)),
                              ])
+
+        if not self.useWikipedia:
+            for title, sentences in self.sections.items():
+                self.sections[title] = []  # Clear sections if not using wikipedia
+
         return text_clf.fit(data, target)
 
     def classifySources(self):
